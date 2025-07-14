@@ -4,10 +4,10 @@ const jwt = require('jsonwebtoken');
 
 // Helper function to generate JWT
 const generateToken = (id, userType, firebaseUid) => {
-  // Ensure JWT_SECRET is loaded from environment variables
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     console.error('JWT_SECRET is not defined in environment variables!');
+    // In production, you might want to throw an error or handle this more gracefully
     throw new Error('JWT_SECRET is not configured.');
   }
   return jwt.sign({ id, userType, firebaseUid }, jwtSecret, {
@@ -21,11 +21,9 @@ const generateToken = (id, userType, firebaseUid) => {
 const registerUser = async (req, res) => {
   const { name, email, password, phone, cnic, address, userType } = req.body;
 
-  // --- DEBUG LOGS START ---
   console.log('\n--- registerUser Controller Debug Start ---');
   console.log('Received registration request for email:', email);
   console.log('User Type:', userType);
-  // --- DEBUG LOGS END ---
 
   if (!name || !email || !password || !phone || !cnic || !address || !userType) {
     console.error('Missing required fields for registration:', { name, email, password, phone, cnic, address, userType });
@@ -33,7 +31,6 @@ const registerUser = async (req, res) => {
   }
 
   try {
-    // 1. Check if user already exists in Firebase
     let firebaseUser;
     try {
       firebaseUser = await admin.auth().getUserByEmail(email);
@@ -48,14 +45,13 @@ const registerUser = async (req, res) => {
       }
     }
 
-    // 2. Create user in Firebase Authentication
     let newFirebaseUser;
     try {
       newFirebaseUser = await admin.auth().createUser({
         email,
         password,
         displayName: name,
-        phoneNumber: phone, // Firebase phone number format might need +countrycode
+        phoneNumber: phone,
         emailVerified: false,
         disabled: false,
       });
@@ -68,23 +64,21 @@ const registerUser = async (req, res) => {
       return res.status(500).json({ message: `Failed to create Firebase user: ${firebaseCreateError.message}` });
     }
 
-    // 3. Create user in MongoDB
     let user;
     try {
       user = await User.create({
         name,
         email,
-        password, // Password will be hashed by pre-save hook in User model
+        password,
         phone,
         cnic,
         address,
         userType,
-        firebaseUid: newFirebaseUser.uid, // Store Firebase UID
+        firebaseUid: newFirebaseUser.uid,
       });
       console.log('Successfully created MongoDB user with ID:', user._id, 'Firebase UID:', user.firebaseUid);
     } catch (mongoError) {
       console.error('Error creating MongoDB user:', mongoError);
-      // If MongoDB user creation fails, consider deleting the Firebase user to avoid orphaned accounts
       try {
         await admin.auth().deleteUser(newFirebaseUser.uid);
         console.warn('Deleted Firebase user due to MongoDB creation failure:', newFirebaseUser.uid);
@@ -94,7 +88,6 @@ const registerUser = async (req, res) => {
       return res.status(500).json({ message: `Failed to create user profile: ${mongoError.message}` });
     }
 
-    // 4. Generate JWT token
     const token = generateToken(user._id, user.userType, user.firebaseUid);
     console.log('Generated JWT token.');
 
@@ -126,37 +119,14 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
-  // --- DEBUG LOGS START ---
   console.log('\n--- loginUser Controller Debug Start ---');
   console.log('Login attempt for email:', email);
-  // --- DEBUG LOGS END ---
 
   if (!email || !password) {
     return res.status(400).json({ message: 'Please enter all fields.' });
   }
 
   try {
-    // 1. Authenticate with Firebase (to get Firebase UID and token for JWT)
-    // This typically involves Firebase Client SDK on frontend, sending ID token to backend.
-    // Here, we're assuming the backend might directly verify password if needed,
-    // but usually, the frontend sends the Firebase ID token after client-side login.
-    // For simplicity, let's assume the frontend sends the Firebase ID token.
-    // If you're directly logging in with email/password here, you'd use Firebase Admin SDK's
-    // signInWithEmailAndPassword (which is not directly available in Admin SDK for client-side auth).
-    // The common flow is: Frontend authenticates with Firebase, gets ID token, sends ID token to backend.
-    // Backend verifies ID token, then looks up user in MongoDB.
-
-    // Let's assume for this login route, the frontend sends the Firebase ID token in the header or body
-    // and we verify it to get the UID. If not, this login route needs to be adjusted.
-    // For now, we'll just check MongoDB directly for password.
-    // A more complete flow would be:
-    // 1. Frontend sends email/password to Firebase Client SDK.
-    // 2. Firebase Client SDK returns ID Token.
-    // 3. Frontend sends ID Token to this backend /api/auth/login route.
-    // 4. Backend verifies ID Token (admin.auth().verifyIdToken(idToken)).
-    // 5. Extracts UID from verified token, then looks up user in MongoDB.
-
-    // For now, let's stick to simple email/password check against MongoDB
     const user = await User.findOne({ email });
     console.log('MongoDB user lookup result for email:', email, ':', user ? 'Found' : 'Not Found');
 
@@ -164,7 +134,6 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
-    // Compare provided password with hashed password in DB
     const isMatch = await user.matchPassword(password);
     console.log('Password match result:', isMatch);
 
@@ -172,7 +141,6 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
-    // Generate JWT token using MongoDB user ID and Firebase UID
     const token = generateToken(user._id, user.userType, user.firebaseUid);
     console.log('Generated JWT token for login.');
 
@@ -202,18 +170,14 @@ const loginUser = async (req, res) => {
 // @route   GET /api/auth/profile
 // @access  Private
 const getUserProfile = async (req, res) => {
-  // The 'req.user' object is populated by the authMiddleware
-  // --- DEBUG LOGS START ---
   console.log('\n--- getUserProfile Controller Debug Start ---');
   console.log('Request received for user profile. req.user (from authMiddleware):', req.user ? req.user.email : 'undefined');
-  // --- DEBUG LOGS END ---
 
   if (!req.user) {
     console.error('getUserProfile: req.user is undefined, indicating authMiddleware failed.');
     return res.status(401).json({ message: 'Not authorized, no user data.' });
   }
 
-  // req.user already contains the user document from MongoDB
   res.status(200).json({
     _id: req.user._id,
     name: req.user.name,
@@ -229,8 +193,56 @@ const getUserProfile = async (req, res) => {
   console.log('--- getUserProfile Controller Debug End ---\n');
 };
 
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateUserProfile = async (req, res) => {
+  console.log('\n--- updateUserProfile Controller Debug Start ---');
+  console.log('Request received to update profile for user:', req.user ? req.user.email : 'undefined');
+
+  if (!req.user) {
+    console.error('updateUserProfile: req.user is undefined, indicating authMiddleware failed.');
+    return res.status(401).json({ message: 'Not authorized, no user data.' });
+  }
+
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+    user.phone = req.body.phone || user.phone;
+    user.cnic = req.body.cnic || user.cnic;
+    user.address = req.body.address || user.address;
+    // userType should generally not be changed via profile update
+    // password should be updated via a separate route or method
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      user: {
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        cnic: updatedUser.cnic,
+        address: updatedUser.address,
+        userType: updatedUser.userType,
+        firebaseUid: updatedUser.firebaseUid,
+        averageRating: updatedUser.averageRating,
+        numRatings: updatedUser.numRatings,
+      },
+    });
+    console.log('--- updateUserProfile Controller Debug End ---\n');
+  } else {
+    console.error('updateUserProfile: User not found in DB for update:', req.user._id);
+    res.status(404).json({ message: 'User not found.' });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
+  updateUserProfile, // Ensure this is exported
 };
