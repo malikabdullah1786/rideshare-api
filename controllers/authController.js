@@ -1,13 +1,14 @@
 const User = require('../models/User');
 const admin = require('firebase-admin');
 const jwt = require('jsonwebtoken');
+// You might need a package like 'nodemailer' for email, but we'll keep it simple for now
+// const nodemailer = require('nodemailer');
 
 // Helper function to generate JWT
 const generateToken = (id, userType, firebaseUid) => {
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     console.error('JWT_SECRET is not defined in environment variables!');
-    // In production, you might want to throw an error or handle this more gracefully
     throw new Error('JWT_SECRET is not configured.');
   }
   return jwt.sign({ id, userType, firebaseUid }, jwtSecret, {
@@ -240,9 +241,53 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+// @desc    Request password reset (placeholder)
+// @route   POST /api/auth/forgotpassword
+// @access  Public
+const forgotPassword = async (req, res) => {
+  console.log('\n--- forgotPassword Controller Debug Start ---');
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: 'Please provide an email address.' });
+  }
+  // --- Implement actual password reset logic here ---
+  // 1. Find user by email
+  // 2. Generate a unique reset token (e.g., using crypto.randomBytes)
+  // 3. Save the token and its expiry to the user's document in MongoDB
+  // 4. Send an email to the user with a link containing the reset token
+  //    (e.g., `https://your-frontend.com/reset-password?token=${resetToken}`)
+  console.log(`Forgot password request for: ${email}. (Logic not fully implemented yet)`);
+  res.status(200).json({ message: 'If a user with that email exists, a password reset link has been sent.' });
+  console.log('--- forgotPassword Controller Debug End ---\n');
+};
+
+// @desc    Reset password using token (placeholder)
+// @route   PUT /api/auth/resetpassword/:token
+// @access  Public
+const resetPassword = async (req, res) => {
+  console.log('\n--- resetPassword Controller Debug Start ---');
+  const { token } = req.params;
+  const { password } = req.body;
+
+  if (!password || password.length < 6) {
+    return res.status(400).json({ message: 'Please provide a new password with at least 6 characters.' });
+  }
+
+  // --- Implement actual password reset logic here ---
+  // 1. Find user by the reset token and ensure it's not expired
+  // 2. Hash the new password and update the user's password in MongoDB
+  // 3. Invalidate the reset token
+  console.log(`Password reset request for token: ${token}. (Logic not fully implemented yet)`);
+  res.status(200).json({ message: 'Password has been reset successfully.' });
+  console.log('--- resetPassword Controller Debug End ---\n');
+};
+
+
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
-  updateUserProfile, // Ensure this is exported
+  updateUserProfile,
+  forgotPassword, // Ensure this is exported
+  resetPassword,  // Ensure this is exported
 };
