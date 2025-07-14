@@ -18,14 +18,15 @@ const generateToken = (id, userType, firebaseUid) => {
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
-  const { name, email, password, phone, cnic, address, userType } = req.body;
+  const { name, email, password, phone, cnic, address, emergencyContact, gender, age, userType, carModel, carRegistration, seatsAvailable } = req.body;
 
   console.log('\n--- registerUser Controller Debug Start ---');
   console.log('Received registration request for email:', email);
   console.log('User Type:', userType);
+  console.log('Raw req.body from frontend:', req.body); // Log the raw body
 
-  if (!name || !email || !password || !phone || !cnic || !address || !userType) {
-    console.error('Missing required fields for registration:', { name, email, password, phone, cnic, address, userType });
+  if (!name || !email || !password || !phone || !cnic || !address || !emergencyContact || !gender || !age || !userType) {
+    console.error('Missing required fields for registration:', { name, email, password, phone, cnic, address, emergencyContact, gender, age, userType });
     return res.status(400).json({ message: 'Please enter all required fields.' });
   }
 
@@ -39,7 +40,7 @@ const registerUser = async (req, res) => {
         email,
         password,
         displayName: name,
-        phoneNumber: phone,
+        phoneNumber: phone, // This should be E.164 from Flutter now
         emailVerified: false,
         disabled: false,
       });
@@ -48,7 +49,6 @@ const registerUser = async (req, res) => {
     } catch (firebaseCreateError) {
       if (firebaseCreateError.code === 'auth/email-already-exists') {
         console.log('Firebase user with email already exists, retrieving existing UID.');
-        // If user already exists in Firebase, get their UID
         try {
           const existingFirebaseUser = await admin.auth().getUserByEmail(email);
           firebaseUid = existingFirebaseUser.uid;
@@ -68,34 +68,41 @@ const registerUser = async (req, res) => {
     let user = await User.findOne({ firebaseUid: firebaseUid });
 
     if (user) {
-      // If MongoDB user exists AND Firebase user existed, it's a duplicate registration attempt
       if (firebaseUserExists) {
           console.log('MongoDB user already exists for Firebase UID:', firebaseUid, '. Duplicate registration attempt.');
           return res.status(400).json({ message: 'User with this email already exists and profile is complete.' });
       } else {
-          // This case should ideally not happen if Firebase user was just created,
-          // but if it does, it means a race condition or inconsistent state.
           console.warn('MongoDB user found for Firebase UID:', firebaseUid, ' but Firebase user was just created. Possible inconsistency.');
           return res.status(400).json({ message: 'User profile already exists for this Firebase account.' });
       }
     }
 
     // 3. If no MongoDB user found, create it
-    try {
-      user = await User.create({
+    const userDataForMongo = {
         name,
         email,
-        password, // Password will be hashed by pre-save hook in User model
+        password,
         phone,
         cnic,
         address,
+        emergencyContact,
+        gender,
+        age,
         userType,
-        firebaseUid: firebaseUid, // Store Firebase UID
-      });
+        firebaseUid: firebaseUid,
+        // Optional fields, only include if they exist and are relevant
+        ...(carModel && { carModel }),
+        ...(carRegistration && { carRegistration }),
+        ...(seatsAvailable !== undefined && { seatsAvailable }), // Check for undefined, as 0 is a valid value
+    };
+
+    console.log('Attempting to create MongoDB user with data:', userDataForMongo); // CRITICAL DEBUG LOG
+
+    try {
+      user = await User.create(userDataForMongo);
       console.log('Successfully created MongoDB user with ID:', user._id, 'Firebase UID:', user.firebaseUid);
     } catch (mongoError) {
       console.error('Error creating MongoDB user:', mongoError);
-      // If MongoDB user creation fails, consider deleting the Firebase user to avoid orphaned accounts
       try {
         await admin.auth().deleteUser(firebaseUid);
         console.warn('Deleted Firebase user due to MongoDB creation failure:', firebaseUid);
@@ -145,17 +152,6 @@ const loginUser = async (req, res) => {
   }
 
   try {
-    // In a typical Firebase-integrated app, login would involve:
-    // 1. Frontend authenticates with Firebase (e.g., signInWithEmailAndPassword)
-    // 2. Frontend gets Firebase ID Token
-    // 3. Frontend sends Firebase ID Token to this backend /api/auth/login route
-    // 4. Backend verifies ID Token (admin.auth().verifyIdToken(idToken))
-    // 5. Extracts UID from verified token, then looks up user in MongoDB.
-
-    // Your current login route seems to be directly checking email/password against MongoDB.
-    // If you intend to use Firebase for login, you'd need to adjust the frontend to send the Firebase ID Token
-    // and this backend route to verify it instead of checking password directly.
-
     const user = await User.findOne({ email });
     console.log('MongoDB user lookup result for email:', email, ':', user ? 'Found' : 'Not Found');
 
@@ -163,7 +159,6 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
-    // If user exists, check password (assuming it's hashed in MongoDB)
     const isMatch = await user.matchPassword(password);
     console.log('Password match result:', isMatch);
 
@@ -171,7 +166,6 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
-    // Generate JWT token using MongoDB user ID and Firebase UID
     const token = generateToken(user._id, user.userType, user.firebaseUid);
     console.log('Generated JWT token for login.');
 
@@ -244,8 +238,9 @@ const updateUserProfile = async (req, res) => {
     user.phone = req.body.phone || user.phone;
     user.cnic = req.body.cnic || user.cnic;
     user.address = req.body.address || user.address;
-    // userType should generally not be changed via profile update
-    // password should be updated via a separate route or method
+    user.emergencyContact = req.body.emergencyContact || user.emergencyContact; // Update this
+    user.gender = req.body.gender || user.gender; // Update this
+    user.age = req.body.age || user.age; // Update this
 
     const updatedUser = await user.save();
 
@@ -280,12 +275,6 @@ const forgotPassword = async (req, res) => {
   if (!email) {
     return res.status(400).json({ message: 'Please provide an email address.' });
   }
-  // --- Implement actual password reset logic here ---
-  // 1. Find user by email
-  // 2. Generate a unique reset token (e.g., using crypto.randomBytes)
-  // 3. Save the token and its expiry to the user's document in MongoDB
-  // 4. Send an email to the user with a link containing the reset token
-  //    (e.g., `https://your-frontend.com/reset-password?token=${resetToken}`)
   console.log(`Forgot password request for: ${email}. (Logic not fully implemented yet)`);
   res.status(200).json({ message: 'If a user with that email exists, a password reset link has been sent.' });
   console.log('--- forgotPassword Controller Debug End ---\n');
@@ -303,10 +292,6 @@ const resetPassword = async (req, res) => {
     return res.status(400).json({ message: 'Please provide a new password with at least 6 characters.' });
   }
 
-  // --- Implement actual password reset logic here ---
-  // 1. Find user by the reset token and ensure it's not expired
-  // 2. Hash the new password and update the user's password in MongoDB
-  // 3. Invalidate the reset token
   console.log(`Password reset request for token: ${token}. (Logic not fully implemented yet)`);
   res.status(200).json({ message: 'Password has been reset successfully.' });
   console.log('--- resetPassword Controller Debug End ---\n');
