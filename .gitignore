@@ -1,0 +1,7 @@
+# Node.js
+node_modules/
+npm-debug.log
+.env
+
+# Firebase Service Account Key
+rideshare-bdd66-firebase-adminsdk-fbsvc-6656f7de8f.json
