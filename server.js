@@ -1,7 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
-const authRoutes = require('./routes/authroutes');
+const authRoutes = require('./routes/authRoutes');
 const rideRoutes = require('./routes/rideRoutes');
 const cors = require('cors');
 const admin = require('firebase-admin'); // Import Firebase Admin SDK
