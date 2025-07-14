@@ -1,92 +1,56 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const admin = require('firebase-admin'); // Import Firebase Admin SDK
 
 const protect = async (req, res, next) => {
   let token;
 
-  // Check for Authorization header
+  // --- DEBUG LOGS START ---
+  console.log('\n--- AuthMiddleware Debug Start ---');
+  console.log('Request Headers:', req.headers);
+  // --- DEBUG LOGS END ---
+
+  // Check if token exists in headers
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       // Get token from header
       token = req.headers.authorization.split(' ')[1];
+      console.log('AuthMiddleware: Token extracted:', token);
 
-      // --- DEBUG LOGS START ---
-      console.log('\n--- AuthMiddleware Debug Start ---');
-      console.log('1. Authorization header found.');
-      console.log('2. FULL Extracted Token (from header):', token); // Log the full token received
-      // --- DEBUG LOGS END ---
+      // Verify token
+      const jwtSecret = process.env.JWT_SECRET;
+      if (!jwtSecret) {
+        console.error('AuthMiddleware ERROR: JWT_SECRET is not defined!');
+        return res.status(500).json({ message: 'Server configuration error: JWT secret missing.' });
+      }
+      const decoded = jwt.verify(token, jwtSecret);
+      console.log('AuthMiddleware: Token decoded:', decoded);
+      console.log('AuthMiddleware: Decoded Firebase UID:', decoded.firebaseUid);
 
-      // Verify Firebase ID Token using Firebase Admin SDK
-      const decodedToken = await admin.auth().verifyIdToken(token);
-
-      // --- DEBUG LOGS START ---
-      console.log('3. Firebase ID Token verified successfully.');
-      console.log('4. Decoded Firebase Token UID:', decodedToken.uid);
-      console.log('5. Decoded Token full payload:', decodedToken); // Log full decoded token
-      // --- DEBUG LOGS END ---
-
-      // Find user in your MongoDB based on Firebase UID
-      const user = await User.findOne({ firebaseUid: decodedToken.uid }).select('-password');
+      // Find user by Firebase UID in MongoDB
+      // Use findOne and select specific fields for efficiency
+      const user = await User.findOne({ firebaseUid: decoded.firebaseUid }).select('-password');
 
       if (!user) {
-        console.error('AuthMiddleware ERROR: User not found in MongoDB for Firebase UID:', decodedToken.uid);
-        console.log('--- AuthMiddleware Debug End ---\n');
+        console.error('AuthMiddleware ERROR: User not found in MongoDB for Firebase UID:', decoded.firebaseUid);
         return res.status(401).json({ message: 'Not authorized, user not found in database.' });
       }
 
       // Attach user to the request object
-      req.user = user; 
-
-      // --- DEBUG LOGS START ---
-      console.log('6. User found in MongoDB:', user.email, user.userType);
-      console.log('7. User object SUCCESSFULLY ATTACHED to req.user. Email:', req.user.email, 'UserType:', req.user.userType);
-      console.log('--- AuthMiddleware Debug End ---\n');
-      // --- DEBUG LOGS END ---
-
-      next(); // Proceed to the next middleware/controller
-
+      req.user = user;
+      console.log('AuthMiddleware: User found and attached to request:', req.user.email);
+      console.log('--- AuthMiddleware Debug End (Success) ---\n');
+      next();
     } catch (error) {
-      console.error('\n--- AuthMiddleware ERROR Start ---');
-      console.error('Firebase ID token verification failed or database lookup error:', error);
-      console.error('Error Code:', error.code);
-      console.error('Error Message:', error.message);
-      console.error('--- AuthMiddleware ERROR End ---\n');
-      
-      let errorMessage = 'Not authorized, invalid or expired token.';
-      if (error.code === 'auth/id-token-expired') {
-        errorMessage = 'Not authorized, token has expired. Please log in again.';
-      } else if (error.code === 'auth/argument-error') {
-        errorMessage = 'Not authorized, malformed token.';
-      } else if (error.code === 'auth/invalid-id-token') {
-        errorMessage = 'Not authorized, invalid token.';
+      console.error('AuthMiddleware ERROR: Token verification failed or user lookup error:', error.message);
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Not authorized, token expired.' });
       }
-      res.status(401).json({ message: errorMessage });
+      return res.status(401).json({ message: 'Not authorized, token failed.' });
     }
   } else {
-    console.error('\n--- AuthMiddleware ERROR Start ---');
-    console.error('No Authorization header or token not in Bearer format.');
-    console.error('--- AuthMiddleware ERROR End ---\n');
-    res.status(401).json({ message: 'Not authorized, no token provided.' });
+    console.error('AuthMiddleware ERROR: No token found in authorization header.');
+    return res.status(401).json({ message: 'Not authorized, no token.' });
   }
 };
 
-// Middleware to check if user is a driver
-const isDriver = (req, res, next) => {
-  if (req.user && req.user.userType === 'driver') {
-    next();
-  } else {
-    res.status(403).json({ message: 'Not authorized as a driver.' });
-  }
-};
-
-// Middleware to check if user is a rider
-const isRider = (req, res, next) => {
-  if (req.user && req.user.userType === 'rider') {
-    next();
-  } else {
-    res.status(403).json({ message: 'Not authorized as a rider.' });
-  }
-};
-
-module.exports = { protect, isDriver, isRider };
+module.exports = { protect };
