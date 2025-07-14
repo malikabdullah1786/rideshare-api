@@ -30,8 +30,8 @@ const postRide = async (req, res) => {
 
     const ride = await Ride.create({
       driver: req.user._id,
-      driverName: req.user.name,
-      driverPhone: req.user.phone,
+      driverName: req.user.name, // Ensure driver's name is saved
+      driverPhone: req.user.phone, // Ensure driver's phone is saved
       from,
       to,
       price,
@@ -92,8 +92,9 @@ const getRides = async (req, res) => {
   }
 
   try {
+    // Populate driver's averageRating, numRatings, AND carModel
     const rides = await Ride.find(query)
-      .populate('driver', 'averageRating numRatings')
+      .populate('driver', 'averageRating numRatings carModel') // ADDED 'carModel' here
       .sort({ departureTime: 1 });
 
     res.status(200).json(rides);
@@ -360,15 +361,18 @@ const getMyBookedRides = async (req, res) => {
   }
 
   try {
+    // Populate driver's averageRating, numRatings, AND carModel
+    // Also populate the 'user' field within the 'passengers' array
     const rides = await Ride.find({ 'passengers.user': req.user._id })
-      .populate('driver', 'averageRating numRatings')
+      .populate('driver', 'averageRating numRatings carModel') // ADDED 'carModel' here
+      .populate('passengers.user', 'name email phone') // Populate relevant passenger user details
       .sort({ departureTime: 1 });
 
     console.log('Rides fetched and populated for rider:');
     rides.forEach(ride => {
       console.log(`  Ride ID: ${ride._id}, From: ${ride.from}, To: ${ride.to}, Driver: ${ride.driverName}, Phone: ${ride.driverPhone}, Status: ${ride.status}`);
       if (ride.driver) {
-        console.log(`    Driver Rating (from populated driver obj): ${ride.driver.averageRating}`);
+        console.log(`    Driver Rating (from populated driver obj): ${ride.driver.averageRating}, Car Model: ${ride.driver.carModel}`);
       } else {
         console.log('    Driver (populated object): NOT POPULATED or NULL');
       }
@@ -377,7 +381,7 @@ const getMyBookedRides = async (req, res) => {
       console.log(`    CreatedAt (from DB): ${ride.createdAt}`);
       console.log(`    CreatedAt (toLocaleString, server's local): ${ride.createdAt.toLocaleString()}`);
       ride.passengers.forEach(p => {
-        console.log(`    Passenger Booking User ID: ${p.user._id}, Status: ${p.status}`);
+        console.log(`    Passenger Booking User ID: ${p.user._id}, Status: ${p.status}, Booked Seats: ${p.bookedSeats}`);
       });
     });
     console.log('--- getMyBookedRides Controller Debug End ---\n');
