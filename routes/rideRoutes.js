@@ -1,40 +1,34 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  postRide, 
-  getRides, 
-  bookRide, 
-  cancelBooking, // New
-  cancelRide,    // New
-  getMyPostedRides, 
+const {
+  postRide,
+  getRides,
+  bookRide,
+  cancelBooking,
+  cancelRide,
+  completeRide,
+  getMyPostedRides,
   getMyBookedRides,
-  getDriverEarnings // New
-} = require('../controllers/rideController');
-const { protect, isDriver, isRider } = require('../middleware/authMiddleware');
+  getDriverEarnings,
+  rateDriver,
+} = require('../controllers/rideController'); // Ensure all functions are imported
 
-// GET /api/rides - Get all rides (can be filtered)
-router.get('/', protect, getRides); 
+const { protect } = require('../middleware/authMiddleware');
 
-// POST /api/rides/post - Post a new ride (only for drivers)
-router.post('/post', protect, isDriver, postRide); 
+// Public routes (or accessible to all authenticated users)
+router.get('/', protect, getRides); // Get all active rides with filters
 
-// POST /api/rides/:id/book - Book a ride (only for riders)
-router.post('/:id/book', protect, isRider, bookRide);
+// Driver specific routes
+router.post('/post', protect, postRide); // Post a new ride
+router.get('/my-posted-rides', protect, getMyPostedRides); // Get rides posted by driver
+router.put('/:id/cancel-ride', protect, cancelRide); // Driver cancels their ride
+router.put('/:id/complete-ride', protect, completeRide); // Driver marks ride as complete
+router.get('/earnings', protect, getDriverEarnings); // Get driver's earnings
 
-// PUT /api/rides/:id/cancel-booking - Cancel a booking by a rider
-router.put('/:id/cancel-booking', protect, isRider, cancelBooking);
-
-// PUT /api/rides/:id/cancel-ride - Cancel a ride by a driver
-router.put('/:id/cancel-ride', protect, isDriver, cancelRide);
-
-// GET /api/rides/my-posted-rides - Get rides posted by the authenticated driver
-router.get('/my-posted-rides', protect, isDriver, getMyPostedRides);
-
-// GET /api/rides/my-booked-rides - Get rides booked by the authenticated rider
-router.get('/my-booked-rides', protect, isRider, getMyBookedRides);
-
-// GET /api/rides/earnings - Get driver's earnings
-router.get('/earnings', protect, isDriver, getDriverEarnings);
-
+// Rider specific routes
+router.post('/:id/book', protect, bookRide); // Book a seat on a ride (This is likely line 19)
+router.put('/:id/cancel-booking', protect, cancelBooking); // Rider cancels their booking
+router.get('/my-booked-rides', protect, getMyBookedRides); // Get rides booked by rider
+router.post('/:id/rate-driver', protect, rateDriver); // Rider rates a driver
 
 module.exports = router;
