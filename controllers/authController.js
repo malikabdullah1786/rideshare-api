@@ -1,8 +1,6 @@
 const User = require('../models/User');
 const admin = require('firebase-admin');
 const jwt = require('jsonwebtoken');
-// You might need a package like 'nodemailer' for email, but we'll keep it simple for now
-// const nodemailer = require('nodemailer');
 
 // Helper function to generate JWT
 const generateToken = (id, userType, firebaseUid) => {
@@ -16,7 +14,7 @@ const generateToken = (id, userType, firebaseUid) => {
   });
 };
 
-// @desc    Register a new user
+// @desc    Register a new user or complete profile for existing Firebase user
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
@@ -32,23 +30,12 @@ const registerUser = async (req, res) => {
   }
 
   try {
-    let firebaseUser;
-    try {
-      firebaseUser = await admin.auth().getUserByEmail(email);
-      console.log('Firebase user already exists with email:', email, 'UID:', firebaseUser.uid);
-      return res.status(400).json({ message: 'User with this email already exists.' });
-    } catch (firebaseError) {
-      if (firebaseError.code === 'auth/user-not-found') {
-        console.log('Firebase user not found, proceeding to create new Firebase user.');
-      } else {
-        console.error('Error checking Firebase user existence:', firebaseError);
-        return res.status(500).json({ message: 'Firebase error during user check.' });
-      }
-    }
+    let firebaseUid;
+    let firebaseUserExists = false;
 
-    let newFirebaseUser;
+    // 1. Try to create user in Firebase Authentication
     try {
-      newFirebaseUser = await admin.auth().createUser({
+      const newFirebaseUser = await admin.auth().createUser({
         email,
         password,
         displayName: name,
@@ -56,39 +43,69 @@ const registerUser = async (req, res) => {
         emailVerified: false,
         disabled: false,
       });
-      console.log('Successfully created Firebase user with UID:', newFirebaseUser.uid);
+      firebaseUid = newFirebaseUser.uid;
+      console.log('Successfully created NEW Firebase user with UID:', firebaseUid);
     } catch (firebaseCreateError) {
-      console.error('Error creating Firebase user:', firebaseCreateError);
       if (firebaseCreateError.code === 'auth/email-already-exists') {
-        return res.status(400).json({ message: 'User with this email already exists in Firebase.' });
+        console.log('Firebase user with email already exists, retrieving existing UID.');
+        // If user already exists in Firebase, get their UID
+        try {
+          const existingFirebaseUser = await admin.auth().getUserByEmail(email);
+          firebaseUid = existingFirebaseUser.uid;
+          firebaseUserExists = true;
+          console.log('Retrieved existing Firebase user UID:', firebaseUid);
+        } catch (getFirebaseUserError) {
+          console.error('Error retrieving existing Firebase user:', getFirebaseUserError);
+          return res.status(500).json({ message: 'Firebase error retrieving existing user.' });
+        }
+      } else {
+        console.error('Error creating Firebase user:', firebaseCreateError);
+        return res.status(500).json({ message: `Failed to create Firebase user: ${firebaseCreateError.message}` });
       }
-      return res.status(500).json({ message: `Failed to create Firebase user: ${firebaseCreateError.message}` });
     }
 
-    let user;
+    // 2. Check if MongoDB user profile already exists for this Firebase UID
+    let user = await User.findOne({ firebaseUid: firebaseUid });
+
+    if (user) {
+      // If MongoDB user exists AND Firebase user existed, it's a duplicate registration attempt
+      if (firebaseUserExists) {
+          console.log('MongoDB user already exists for Firebase UID:', firebaseUid, '. Duplicate registration attempt.');
+          return res.status(400).json({ message: 'User with this email already exists and profile is complete.' });
+      } else {
+          // This case should ideally not happen if Firebase user was just created,
+          // but if it does, it means a race condition or inconsistent state.
+          console.warn('MongoDB user found for Firebase UID:', firebaseUid, ' but Firebase user was just created. Possible inconsistency.');
+          return res.status(400).json({ message: 'User profile already exists for this Firebase account.' });
+      }
+    }
+
+    // 3. If no MongoDB user found, create it
     try {
       user = await User.create({
         name,
         email,
-        password,
+        password, // Password will be hashed by pre-save hook in User model
         phone,
         cnic,
         address,
         userType,
-        firebaseUid: newFirebaseUser.uid,
+        firebaseUid: firebaseUid, // Store Firebase UID
       });
       console.log('Successfully created MongoDB user with ID:', user._id, 'Firebase UID:', user.firebaseUid);
     } catch (mongoError) {
       console.error('Error creating MongoDB user:', mongoError);
+      // If MongoDB user creation fails, consider deleting the Firebase user to avoid orphaned accounts
       try {
-        await admin.auth().deleteUser(newFirebaseUser.uid);
-        console.warn('Deleted Firebase user due to MongoDB creation failure:', newFirebaseUser.uid);
+        await admin.auth().deleteUser(firebaseUid);
+        console.warn('Deleted Firebase user due to MongoDB creation failure:', firebaseUid);
       } catch (deleteError) {
         console.error('Failed to delete Firebase user after MongoDB error:', deleteError);
       }
       return res.status(500).json({ message: `Failed to create user profile: ${mongoError.message}` });
     }
 
+    // 4. Generate JWT token
     const token = generateToken(user._id, user.userType, user.firebaseUid);
     console.log('Generated JWT token.');
 
@@ -128,6 +145,17 @@ const loginUser = async (req, res) => {
   }
 
   try {
+    // In a typical Firebase-integrated app, login would involve:
+    // 1. Frontend authenticates with Firebase (e.g., signInWithEmailAndPassword)
+    // 2. Frontend gets Firebase ID Token
+    // 3. Frontend sends Firebase ID Token to this backend /api/auth/login route
+    // 4. Backend verifies ID Token (admin.auth().verifyIdToken(idToken))
+    // 5. Extracts UID from verified token, then looks up user in MongoDB.
+
+    // Your current login route seems to be directly checking email/password against MongoDB.
+    // If you intend to use Firebase for login, you'd need to adjust the frontend to send the Firebase ID Token
+    // and this backend route to verify it instead of checking password directly.
+
     const user = await User.findOne({ email });
     console.log('MongoDB user lookup result for email:', email, ':', user ? 'Found' : 'Not Found');
 
@@ -135,6 +163,7 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
+    // If user exists, check password (assuming it's hashed in MongoDB)
     const isMatch = await user.matchPassword(password);
     console.log('Password match result:', isMatch);
 
@@ -142,6 +171,7 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
+    // Generate JWT token using MongoDB user ID and Firebase UID
     const token = generateToken(user._id, user.userType, user.firebaseUid);
     console.log('Generated JWT token for login.');
 
@@ -288,6 +318,6 @@ module.exports = {
   loginUser,
   getUserProfile,
   updateUserProfile,
-  forgotPassword, // Ensure this is exported
-  resetPassword,  // Ensure this is exported
+  forgotPassword,
+  resetPassword,
 };
