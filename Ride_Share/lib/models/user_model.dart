@@ -2,36 +2,40 @@
 // import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AppUser {
+  final String id;
   final String firebaseUid; // Firebase User ID
   final String email;
   final String name;
-  final String cnic;
+  final String? cnic;
   final String phone;
   final String address;
-  final String emergencyContact;
-  final String gender;
-  final int age;
+  final String? emergencyContact;
+  final String? gender;
+  final int? age;
   final String userType; // 'driver' or 'rider'
   final bool emailVerified; // From Firebase Auth
   final bool profileCompleted; // Indicates if extended profile is saved to MongoDB
+  final bool isApproved; // New field for admin approval
   final String? carModel; // Driver specific
   final String? carRegistration; // Driver specific
   final int? seatsAvailable; // Driver specific
   final DateTime createdAt;
 
   AppUser({
+    required this.id,
     required this.firebaseUid,
     required this.email,
     required this.name,
-    required this.cnic,
+    this.cnic,
     required this.phone,
     required this.address,
-    required this.emergencyContact,
-    required this.gender,
-    required this.age,
+    this.emergencyContact,
+    this.gender,
+    this.age,
     required this.userType,
     this.emailVerified = false, // Default from Firebase Auth
     this.profileCompleted = false, // Default to false until MongoDB profile is saved
+    this.isApproved = false, // Default to false
     this.carModel,
     this.carRegistration,
     this.seatsAvailable,
@@ -41,18 +45,20 @@ class AppUser {
   // Factory constructor to create an AppUser from a map (e.g., from your MongoDB backend)
   factory AppUser.fromMap(Map<String, dynamic> data) {
     return AppUser(
+      id: data['_id'] ?? '',
       firebaseUid: data['firebaseUid'] ?? '',
       email: data['email'] ?? '',
       name: data['name'] ?? '',
-      cnic: data['cnic'] ?? '',
+      cnic: data['cnic'],
       phone: data['phone'] ?? '',
       address: data['address'] ?? '',
-      emergencyContact: data['emergencyContact'] ?? '',
-      gender: data['gender'] ?? '',
-      age: data['age'] ?? 0,
+      emergencyContact: data['emergencyContact'],
+      gender: data['gender'],
+      age: data['age'],
       userType: data['userType'] ?? 'rider',
       emailVerified: data['emailVerified'] ?? false,
       profileCompleted: data['profileCompleted'] ?? false,
+      isApproved: data['isApproved'] ?? false,
       carModel: data['carModel'],
       carRegistration: data['carRegistration'],
       seatsAvailable: data['seatsAvailable'],

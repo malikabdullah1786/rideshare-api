@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:ride_share_app/constants/colors.dart';
 import 'package:ride_share_app/providers/auth_provider.dart';
 import 'package:ride_share_app/screens/rider/find_rides.dart';
+import 'package:ride_share_app/screens/ride_tracking_screen.dart';
 import 'package:ride_share_app/widgets/custom_button.dart';
 import 'package:ride_share_app/widgets/custom_textfield.dart';
 import 'package:ride_share_app/widgets/loading_indicator.dart';
@@ -251,6 +252,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final appAuthProvider = Provider.of<AppAuthProvider>(context);
+    final screenSize = MediaQuery.of(context).size;
     print('RiderHomeScreen: build method called.');
     print('RiderHomeScreen: appAuthProvider.appUser is null: ${appAuthProvider.appUser == null}');
     print('RiderHomeScreen: appAuthProvider.databaseService.getCurrentUserId(): ${appAuthProvider.databaseService.getCurrentUserId()}');
@@ -274,7 +276,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -282,7 +284,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
               'Welcome, Passenger ${appAuthProvider.appUser?.name ?? ''}!',
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 30),
+            SizedBox(height: screenSize.height * 0.03),
             CustomButton(
               text: 'Find Rides',
               onPressed: () async {
@@ -294,12 +296,12 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
               },
               color: AppColors.primaryColor,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: screenSize.height * 0.02),
             const Text(
               'Your Booked Rides History:', // Keeping this title as per your provided code
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: screenSize.height * 0.01),
             _isLoadingBookedRides
                 ? const Center(child: LoadingIndicator())
                 : Expanded(
@@ -382,19 +384,38 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
+                              if (isRideActive && isBookingAccepted)
+                                Expanded(
+                                  child: CustomButton(
+                                    text: 'Track Ride',
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => RideTrackingScreen(ride: ride),
+                                        ),
+                                      );
+                                    },
+                                    color: AppColors.infoColor,
+                                  ),
+                                ),
                               if (isRideActive && isBookingAccepted && ride.departureTime.isAfter(DateTime.now()))
-                                CustomButton(
-                                  text: 'Cancel My Booking',
-                                  onPressed: () => _showCancelBookingDialog(ride.id),
-                                  color: AppColors.errorColor,
-                                  width: 180,
+                                const SizedBox(width: 10),
+                              if (isRideActive && isBookingAccepted && ride.departureTime.isAfter(DateTime.now()))
+                                Expanded(
+                                  child: CustomButton(
+                                    text: 'Cancel My Booking',
+                                    onPressed: () => _showCancelBookingDialog(ride.id),
+                                    color: AppColors.errorColor,
+                                  ),
                                 ),
                               if (isRideCompleted && isBookingCompletedByDriver)
-                                CustomButton(
-                                  text: 'Rate Driver',
-                                  onPressed: () => _showRatingDialog(ride.id),
-                                  color: AppColors.primaryColor,
-                                  width: 150,
+                                Expanded(
+                                  child: CustomButton(
+                                    text: 'Rate Driver',
+                                    onPressed: () => _showRatingDialog(ride.id),
+                                    color: AppColors.primaryColor,
+                                  ),
                                 ),
                             ],
                           ),

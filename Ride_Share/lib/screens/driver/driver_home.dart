@@ -161,6 +161,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final appAuthProvider = Provider.of<AppAuthProvider>(context);
+    final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
       appBar: AppBar(
@@ -180,7 +181,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -188,7 +189,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               'Welcome, Driver ${appAuthProvider.appUser?.name ?? ''}!',
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: screenSize.height * 0.02),
             Card(
               elevation: 4,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -197,23 +198,27 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Column(
-                      children: [
-                        Text('Total Earnings', style: TextStyle(fontSize: 16, color: AppColors.hintColor)),
-                        Text('PKR ${_totalEarnings.toStringAsFixed(2)}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.secondaryColor)),
-                      ],
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text('Total Earnings', style: TextStyle(fontSize: 16, color: AppColors.hintColor), textAlign: TextAlign.center),
+                          Text('PKR ${_totalEarnings.toStringAsFixed(2)}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.secondaryColor)),
+                        ],
+                      ),
                     ),
-                    Column(
-                      children: [
-                        Text('Completed Rides', style: TextStyle(fontSize: 16, color: AppColors.hintColor)),
-                        Text('$_completedRideCount', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
-                      ],
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text('Completed Rides', style: TextStyle(fontSize: 16, color: AppColors.hintColor), textAlign: TextAlign.center),
+                          Text('$_completedRideCount', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 30),
+            SizedBox(height: screenSize.height * 0.03),
             CustomButton(
               text: 'Post a Ride',
               onPressed: () async {
@@ -225,12 +230,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               },
               color: AppColors.primaryColor,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: screenSize.height * 0.02),
             const Text(
               'Your Posted Rides History:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: screenSize.height * 0.01),
             _isLoadingRides
                 ? const Center(child: LoadingIndicator())
                 : Expanded(
@@ -284,7 +289,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                                         Text(' - Name: ${passenger.userName ?? 'N/A'} (Seats: ${passenger.bookedSeats})'),
                                         Text('   Email: ${passenger.userEmail ?? 'N/A'}'),
                                         Text('   Phone: ${passenger.contactPhone}'),
-                                        Text('   CNIC: ${passenger.userCnic ?? 'N/A'}'),
                                         Text('   Pickup: ${passenger.pickupAddress}'),
                                         Text('   Drop-off: ${passenger.dropoffAddress}'),
                                         Text('   Booking Status: ${passenger.status.toUpperCase()}'),
@@ -301,18 +305,22 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               if (!isCompleted && !isCancelled && isPastDeparture)
-                                CustomButton(
-                                  text: 'Mark Completed',
-                                  onPressed: () => _completeRide(ride.id),
-                                  color: AppColors.secondaryColor,
-                                  width: 150,
+                                Expanded(
+                                  child: CustomButton(
+                                    text: 'Mark Completed',
+                                    onPressed: () => _completeRide(ride.id),
+                                    color: AppColors.secondaryColor,
+                                  ),
                                 ),
+                              if (!isCompleted && !isCancelled && !isPastDeparture)
+                                const SizedBox(width: 10),
                               if (!isCompleted && !isCancelled && !isPastDeparture) // Can only cancel future active rides
-                                CustomButton(
-                                  text: 'Cancel Ride',
-                                  onPressed: () => _showCancelRideDialog(ride.id),
-                                  color: AppColors.errorColor,
-                                  width: 150,
+                                Expanded(
+                                  child: CustomButton(
+                                    text: 'Cancel Ride',
+                                    onPressed: () => _showCancelRideDialog(ride.id),
+                                    color: AppColors.errorColor,
+                                  ),
                                 ),
                             ],
                           ),

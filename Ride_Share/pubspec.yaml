@@ -122,6 +122,10 @@ dependencies:
   # For icons (optional, if you need more than Material Icons)
   cupertino_icons: ^1.0.6
   collection: ^1.18.0
+  google_maps_flutter: ^2.5.0
+  web_socket_channel: ^2.4.0
+  location: ^5.0.3
+  flutter_polyline_points: ^2.0.0
 
 dev_dependencies:
   flutter_test:

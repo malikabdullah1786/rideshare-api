@@ -73,6 +73,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: LoadingIndicator()),
@@ -86,36 +88,36 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.email, size: 80, color: AppColors.primaryColor),
-              const SizedBox(height: 20),
+              SizedBox(height: screenSize.height * 0.025),
               const Text(
                 'Verify Your Email',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: screenSize.height * 0.025),
               Text(
                 'We sent a verification email to ${_user?.email}. Please check your inbox and spam folder.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16),
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: screenSize.height * 0.04),
               CustomButton(
                 text: 'Resend Verification Email',
                 onPressed: _resendVerificationEmail,
                 color: AppColors.primaryColor,
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               CustomButton(
                 text: 'I\'ve Verified My Email',
                 onPressed: _checkEmailVerification,
                 color: AppColors.secondaryColor,
               ),
               if (_error != null) ...[
-                const SizedBox(height: 20),
+                SizedBox(height: screenSize.height * 0.025),
                 Text(
                   _error!,
                   style: const TextStyle(color: AppColors.errorColor),

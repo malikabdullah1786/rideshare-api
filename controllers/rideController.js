@@ -15,6 +15,10 @@ const postRide = async (req, res) => {
     return res.status(403).json({ message: 'Only drivers can post rides.' });
   }
 
+  if (!req.user.isApproved) {
+    return res.status(403).json({ message: 'Your account is not approved to post rides yet.' });
+  }
+
   if (!from || !to || !price || !seats || !departureTime) {
     return res.status(400).json({ message: 'Please include all ride details.' });
   }
@@ -343,7 +347,7 @@ const getMyPostedRides = async (req, res) => {
 
   try {
     const rides = await Ride.find({ driver: req.user._id })
-      .populate('passengers.user', 'name email phone cnic address')
+      .populate('passengers.user', 'name email phone')
       .sort({ createdAt: -1 });
 
     res.status(200).json(rides);

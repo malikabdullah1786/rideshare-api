@@ -96,6 +96,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final appAuthProvider = Provider.of<AppAuthProvider>(context); // Use AppAuthProvider
+    final screenSize = MediaQuery.of(context).size;
 
     if (appAuthProvider.isLoading) {
       return const Scaffold(
@@ -109,7 +110,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: AppColors.primaryColor,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05, vertical: 20),
         child: Form(
           key: _formKey,
           child: Column(
@@ -129,7 +130,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   labelText: 'I am a',
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: screenSize.height * 0.02),
               CustomTextField(
                 controller: _emailController,
                 labelText: 'Email',
@@ -144,7 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               CustomTextField(
                 controller: _passwordController,
                 labelText: 'Password',
@@ -159,7 +160,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               CustomTextField(
                 controller: _nameController,
                 labelText: 'Full Name',
@@ -170,7 +171,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               CustomTextField(
                 controller: _cnicController,
                 labelText: 'CNIC (without dashes)',
@@ -185,7 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               CustomTextField(
                 controller: _phoneController,
                 labelText: 'Phone Number (e.g., 923001234567)',
@@ -200,7 +201,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               CustomTextField(
                 controller: _addressController,
                 labelText: 'Address',
@@ -211,7 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               CustomTextField(
                 controller: _emergencyContactController,
                 labelText: 'Emergency Contact Number',
@@ -226,7 +227,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               DropdownButtonFormField<String>(
                 value: _gender,
                 items: const [
@@ -243,7 +244,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   labelText: 'Gender',
                 ),
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               CustomTextField(
                 controller: _ageController,
                 labelText: 'Age',
@@ -259,7 +260,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
               ),
               if (_userType == 'driver') ...[
-                const SizedBox(height: 15),
+                SizedBox(height: screenSize.height * 0.02),
                 CustomTextField(
                   controller: _carModelController,
                   labelText: 'Car Model',
@@ -270,7 +271,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 15),
+                SizedBox(height: screenSize.height * 0.02),
                 CustomTextField(
                   controller: _carRegistrationController,
                   labelText: 'Car Registration Number',
@@ -281,7 +282,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 15),
+                SizedBox(height: screenSize.height * 0.02),
                 CustomTextField(
                   controller: _seatsAvailableController,
                   labelText: 'Number of Seats Available',
@@ -297,14 +298,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
               ],
-              const SizedBox(height: 20),
+              SizedBox(height: screenSize.height * 0.025),
               if (appAuthProvider.error != null)
                 Text(
                   appAuthProvider.error!,
                   style: const TextStyle(color: AppColors.errorColor),
                   textAlign: TextAlign.center,
                 ),
-              const SizedBox(height: 20),
+              SizedBox(height: screenSize.height * 0.025),
               CustomButton(
                 text: 'Register',
                 onPressed: _register,

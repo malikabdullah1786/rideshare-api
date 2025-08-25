@@ -5,6 +5,7 @@ class AppColors {
   static const secondaryColor = Color(0xFF34A853);
   static const errorColor = Color(0xFFEA4335);
   static const warningColor = Color(0xFFFBBC05);
+  static const infoColor = Color(0xFF17A2B8);
   static const backgroundColor = Color(0xFFF8F9FA);
   static const textColor = Color(0xFF202124);
   static const hintColor = Color(0xFF5F6368);

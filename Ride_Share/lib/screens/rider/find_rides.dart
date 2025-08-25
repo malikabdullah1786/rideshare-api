@@ -390,6 +390,8 @@ class _FindRidesScreenState extends State<FindRidesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Find Rides'),
@@ -398,7 +400,7 @@ class _FindRidesScreenState extends State<FindRidesScreen> {
       body: _isLoading
           ? const Center(child: LoadingIndicator())
           : SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05, vertical: 20),
         child: Column(
           children: [
             Form(
@@ -428,23 +430,23 @@ class _FindRidesScreenState extends State<FindRidesScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 15),
+                  SizedBox(height: screenSize.height * 0.02),
                   CustomTextField(
                     controller: _fromController,
                     labelText: 'Departure Location (optional)',
                   ),
-                  const SizedBox(height: 15),
+                  SizedBox(height: screenSize.height * 0.02),
                   CustomTextField(
                     controller: _toController,
                     labelText: 'Destination (optional)',
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: screenSize.height * 0.025),
                   CustomButton(
                     text: 'Apply Filters',
                     onPressed: _applyFilters,
                     color: AppColors.primaryColor,
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: screenSize.height * 0.015),
                   CustomButton(
                     text: 'Clear Filters & Show All',
                     onPressed: () {
@@ -461,12 +463,12 @@ class _FindRidesScreenState extends State<FindRidesScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 30),
+            SizedBox(height: screenSize.height * 0.04),
             const Text(
               'Available Rides:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: screenSize.height * 0.015),
             _foundRides.isEmpty
                 ? Center(
               child: Text(
@@ -502,11 +504,13 @@ class _FindRidesScreenState extends State<FindRidesScreen> {
                         Text('Seats Available: ${ride.seatsAvailable}/${ride.seats}'),
                         const SizedBox(height: 10),
                         if (ride.seatsAvailable > 0)
-                          CustomButton(
-                            text: 'Book Ride', // Changed from "Book 1 Seat"
-                            onPressed: () => _showBookingDialog(ride), // Show dialog for booking
-                            color: AppColors.secondaryColor,
-                            width: 150,
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: CustomButton(
+                              text: 'Book Ride', // Changed from "Book 1 Seat"
+                              onPressed: () => _showBookingDialog(ride), // Show dialog for booking
+                              color: AppColors.secondaryColor,
+                            ),
                           )
                         else
                           const Text(

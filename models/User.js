@@ -62,9 +62,13 @@ const userSchema = mongoose.Schema(
     userType: {
       type: String,
       required: true,
-      enum: ['rider', 'driver'],
+      enum: ['rider', 'driver', 'admin'],
     },
     emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isApproved: {
       type: Boolean,
       default: false,
     },

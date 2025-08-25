@@ -59,6 +59,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final appAuthProvider = Provider.of<AppAuthProvider>(context); // Use AppAuthProvider
+    final screenSize = MediaQuery.of(context).size;
 
     if (appAuthProvider.isLoading) {
       return const Scaffold(
@@ -73,15 +74,16 @@ class _AuthScreenState extends State<AuthScreen> {
         backgroundColor: AppColors.primaryColor,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            SizedBox(height: screenSize.height * 0.05),
             Image.asset(
               'assets/images/logo.png', // Ensure you have this image
-              height: 150,
+              height: screenSize.height * 0.15,
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: screenSize.height * 0.05),
             Text(
               'Login to your account',
               style: TextStyle(
@@ -90,7 +92,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 color: AppColors.textColor,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: screenSize.height * 0.025),
             Form(
               key: _loginFormKey,
               child: Column(
@@ -110,7 +112,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 15),
+                  SizedBox(height: screenSize.height * 0.02),
                   CustomTextField(
                     controller: _passwordController,
                     labelText: 'Password',
@@ -125,7 +127,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: screenSize.height * 0.025),
             // Error message from AppAuthProvider
             if (appAuthProvider.error != null && !appAuthProvider.error!.contains("successful"))
               Padding(
@@ -141,7 +143,7 @@ class _AuthScreenState extends State<AuthScreen> {
               onPressed: _login,
               color: AppColors.primaryColor,
             ),
-            const SizedBox(height: 15),
+            SizedBox(height: screenSize.height * 0.02),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
@@ -158,7 +160,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: screenSize.height * 0.025),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

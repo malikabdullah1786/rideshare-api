@@ -54,6 +54,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final appAuthProvider = Provider.of<AppAuthProvider>(context); // Use AppAuthProvider
+    final screenSize = MediaQuery.of(context).size;
 
     if (appAuthProvider.isLoading) {
       return const Scaffold(
@@ -67,19 +68,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         backgroundColor: AppColors.primaryColor,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05, vertical: 20),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 50),
+              SizedBox(height: screenSize.height * 0.1),
               const Text(
                 'Enter your email to receive a password reset link.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: AppColors.textColor),
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: screenSize.height * 0.05),
               CustomTextField(
                 controller: _emailController,
                 labelText: 'Email',
@@ -94,7 +95,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: screenSize.height * 0.05),
               if (appAuthProvider.error != null &&
                   !appAuthProvider.error!.contains("Password reset link sent"))
                 Padding(

@@ -26,6 +26,7 @@ const mockDriver = {
   emergencyContact: '0987654321',
   gender: 'Male',
   age: 30,
+  isApproved: true,
 };
 
 // Mock the auth middleware

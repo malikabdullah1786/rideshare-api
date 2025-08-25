@@ -167,6 +167,8 @@ class _PostRideScreenState extends State<PostRideScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Post a New Ride'),
@@ -175,7 +177,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
       body: _isLoading
           ? const Center(child: LoadingIndicator())
           : SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05, vertical: 20),
         child: Form(
           key: _formKey,
           child: Column(
@@ -186,13 +188,13 @@ class _PostRideScreenState extends State<PostRideScreen> {
                 labelText: 'Departure Location',
                 validator: (value) => value!.isEmpty ? 'Departure location is required.' : null,
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               CustomTextField(
                 controller: _toController,
                 labelText: 'Destination',
                 validator: (value) => value!.isEmpty ? 'Destination is required.' : null,
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               CustomTextField(
                 controller: _priceController,
                 labelText: 'Price per Seat (PKR)',
@@ -203,7 +205,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: screenSize.height * 0.02),
               CustomTextField(
                 controller: _seatsController,
                 labelText: 'Total Seats Offered',
@@ -214,7 +216,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: screenSize.height * 0.03),
               Row(
                 children: [
                   Expanded(
@@ -238,7 +240,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: screenSize.height * 0.04),
               CustomButton(
                 text: 'Post Ride',
                 onPressed: _postRide,

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:ride_share_app/constants/colors.dart';
 import 'package:ride_share_app/models/user_model.dart';
 import 'package:ride_share_app/providers/auth_provider.dart'; // Import AppAuthProvider
+import 'package:ride_share_app/screens/admin/admin_home.dart';
 import 'package:ride_share_app/screens/driver/driver_home.dart';
 import 'package:ride_share_app/screens/rider/rider_home.dart';
 import 'package:ride_share_app/screens/verify_email_screen.dart';
@@ -44,8 +45,12 @@ class HomeScreen extends StatelessWidget {
     // }
 
     // Route to appropriate home screen based on user type directly after email verification
-    return currentUser.userType == 'driver'
-        ? const DriverHomeScreen()
-        : const RiderHomeScreen();
+    if (currentUser.userType == 'driver') {
+      return const DriverHomeScreen();
+    } else if (currentUser.userType == 'admin') {
+      return const AdminHomeScreen();
+    } else {
+      return const RiderHomeScreen();
+    }
   }
 }

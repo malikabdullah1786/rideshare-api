@@ -124,10 +124,11 @@ const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        cnic: user.cnic,
         address: user.address,
         userType: user.userType,
         firebaseUid: user.firebaseUid,
+        averageRating: user.averageRating,
+        numRatings: user.numRatings,
       },
     });
     console.log('--- registerUser Controller Debug End ---\n');
@@ -177,10 +178,11 @@ const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        cnic: user.cnic,
         address: user.address,
         userType: user.userType,
         firebaseUid: user.firebaseUid,
+        averageRating: user.averageRating,
+        numRatings: user.numRatings,
       },
     });
     console.log('--- loginUser Controller Debug End ---\n');
@@ -208,7 +210,6 @@ const getUserProfile = async (req, res) => {
     name: req.user.name,
     email: req.user.email,
     phone: req.user.phone,
-    cnic: req.user.cnic,
     address: req.user.address,
     userType: req.user.userType,
     firebaseUid: req.user.firebaseUid,
@@ -251,7 +252,6 @@ const updateUserProfile = async (req, res) => {
         name: updatedUser.name,
         email: updatedUser.email,
         phone: updatedUser.phone,
-        cnic: updatedUser.cnic,
         address: updatedUser.address,
         userType: updatedUser.userType,
         firebaseUid: updatedUser.firebaseUid,

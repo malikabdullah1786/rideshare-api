@@ -597,4 +597,43 @@ class DatabaseService {
     }
   }
 
+  // --- Admin Operations ---
+
+  Future<List<dynamic>> getAllUsers() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/admin/users'),
+        headers: _getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        print("Backend Error (Get All Users): ${errorData['message']}");
+        throw Exception(errorData['message'] ?? 'Failed to fetch users');
+      }
+    } catch (e) {
+      print("Error getting all users: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> approveUser(String userId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$_baseUrl/admin/users/$userId/approve'),
+        headers: _getHeaders(),
+      );
+
+      if (response.statusCode != 200) {
+        final errorData = json.decode(response.body);
+        print("Backend Error (Approve User): ${errorData['message']}");
+        throw Exception(errorData['message'] ?? 'Failed to approve user');
+      }
+    } catch (e) {
+      print("Error approving user: $e");
+      rethrow;
+    }
+  }
 }
