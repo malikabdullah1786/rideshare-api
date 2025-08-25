@@ -35,10 +35,12 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
 
   void _getPolyline() async {
     PolylineResult result = await _polylinePoints.getRouteBetweenCoordinates(
-      _googleApiKey,
-      PointLatLng(widget.ride.origin.latitude, widget.ride.origin.longitude),
-      PointLatLng(widget.ride.destination.latitude, widget.ride.destination.longitude),
-      travelMode: TravelMode.driving,
+      googleApiKey: _googleApiKey,
+      request: PolylineRequest(
+        origin: PointLatLng(widget.ride.origin.latitude, widget.ride.origin.longitude),
+        destination: PointLatLng(widget.ride.destination.latitude, widget.ride.destination.longitude),
+        mode: TravelMode.driving,
+      ),
     );
 
     if (result.points.isNotEmpty) {
