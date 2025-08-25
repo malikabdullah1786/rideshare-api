@@ -1,5 +1,9 @@
 const Ride = require('../models/Ride');
 const User = require('../models/User'); // To populate driver details
+const {
+  geocodeAddress,
+  getDistanceMatrix,
+} = require('../utils/googleMaps');
 
 // @desc    Post a new ride
 // @route   POST /api/rides/post
@@ -7,33 +11,36 @@ const User = require('../models/User'); // To populate driver details
 const postRide = async (req, res) => {
   const { from, to, price, seats, departureTime } = req.body;
 
-  console.log('\n--- postRide Controller Debug Start ---');
-  console.log('1. Received departureTime from frontend (ISO string):', departureTime);
-
   if (!req.user || req.user.userType !== 'driver') {
-    console.error('Attempt to post ride by non-driver or unauthenticated user:', req.user);
     return res.status(403).json({ message: 'Only drivers can post rides.' });
   }
 
   if (!from || !to || !price || !seats || !departureTime) {
-    console.error('Missing required fields for postRide:', { from, to, price, seats, departureTime });
     return res.status(400).json({ message: 'Please include all ride details.' });
   }
 
   try {
-    const parsedDepartureTime = new Date(departureTime); 
+    const origin = await geocodeAddress(from);
+    const destination = await geocodeAddress(to);
 
-    console.log('2. Parsed departureTime (Date object):', parsedDepartureTime);
-    console.log('3. Parsed departureTime getTimezoneOffset (minutes from UTC on server):', parsedDepartureTime.getTimezoneOffset());
-    console.log('4. Parsed departureTime toISOString() (always UTC):', parsedDepartureTime.toISOString());
-    console.log('5. Parsed departureTime toLocaleString() (server local time):', parsedDepartureTime.toLocaleString());
+    const distanceMatrix = await getDistanceMatrix(origin, destination);
+    const distance = distanceMatrix.distance.text;
+    const duration = distanceMatrix.duration.text;
+
+    const suggestedPrice = (distanceMatrix.distance.value / 1000) * 0.5;
+
+    const parsedDepartureTime = new Date(departureTime);
 
     const ride = await Ride.create({
       driver: req.user._id,
-      driverName: req.user.name, // Ensure driver's name is saved
-      driverPhone: req.user.phone, // Ensure driver's phone is saved
+      driverName: req.user.name,
+      driverPhone: req.user.phone,
       from,
       to,
+      origin,
+      destination,
+      distance,
+      duration,
       price,
       seats,
       seatsAvailable: seats,
@@ -41,12 +48,10 @@ const postRide = async (req, res) => {
       status: 'active',
     });
 
-    console.log('6. Ride saved to DB. Departure time from saved ride object:', ride.departureTime);
-    console.log('--- postRide Controller Debug End ---\n');
-
     res.status(201).json({
       message: 'Ride posted successfully',
       ride: ride,
+      suggestedPrice: suggestedPrice.toFixed(2),
     });
   } catch (error) {
     console.error('Error posting ride:', error);
@@ -492,9 +497,49 @@ const rateDriver = async (req, res) => {
 };
 
 
+// @desc    Adjust the fare of a posted ride
+// @route   PUT /api/rides/:id/adjust-fare
+// @access  Private (Driver only)
+const adjustFare = async (req, res) => {
+  const rideId = req.params.id;
+  const { newPrice } = req.body;
+
+  if (!req.user || req.user.userType !== 'driver') {
+    return res.status(403).json({ message: 'Only drivers can adjust fares.' });
+  }
+
+  if (!newPrice) {
+    return res.status(400).json({ message: 'Please provide a new price.' });
+  }
+
+  try {
+    const ride = await Ride.findById(rideId);
+
+    if (!ride) {
+      return res.status(404).json({ message: 'Ride not found.' });
+    }
+
+    if (ride.driver.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'You are not authorized to adjust the fare for this ride.' });
+    }
+
+    ride.price = newPrice;
+    await ride.save();
+
+    res.status(200).json({
+      message: 'Fare adjusted successfully',
+      ride: ride,
+    });
+  } catch (error) {
+    console.error('Error adjusting fare:', error);
+    res.status(500).json({ message: 'Server error adjusting fare' });
+  }
+};
+
 module.exports = {
   postRide,
   getRides,
+  adjustFare,
   bookRide,
   cancelBooking,
   cancelRide,

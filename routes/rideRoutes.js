@@ -11,6 +11,7 @@ const {
   getMyBookedRides,
   getDriverEarnings,
   rateDriver,
+  adjustFare,
 } = require('../controllers/rideController'); // Ensure all functions are imported
 
 const { protect } = require('../middleware/authMiddleware');
@@ -23,6 +24,7 @@ router.post('/post', protect, postRide); // Post a new ride
 router.get('/my-posted-rides', protect, getMyPostedRides); // Get rides posted by driver
 router.put('/:id/cancel-ride', protect, cancelRide); // Driver cancels their ride
 router.put('/:id/complete-ride', protect, completeRide); // Driver marks ride as complete
+router.put('/:id/adjust-fare', protect, adjustFare); // Driver adjusts the fare of a ride
 router.get('/earnings', protect, getDriverEarnings); // Get driver's earnings
 
 // Rider specific routes

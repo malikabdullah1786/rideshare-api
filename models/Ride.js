@@ -60,6 +60,20 @@ const rideSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    origin: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
+    destination: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
+    distance: {
+      type: String,
+    },
+    duration: {
+      type: String,
+    },
     price: {
       type: Number,
       required: true,
