@@ -35,6 +35,13 @@ class AppAuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void updateUserProfilePicture(String newImageUrl) {
+    if (_appUser != null) {
+      _appUser = _appUser!.copyWith(profilePictureUrl: newImageUrl);
+      notifyListeners();
+    }
+  }
+
   Future<void> loadExtendedUserData(String firebaseUid) async {
     _isLoading = true;
     _error = null;

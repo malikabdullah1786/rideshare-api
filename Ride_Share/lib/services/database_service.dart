@@ -1,6 +1,10 @@
 import 'dart:convert';
 
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 import 'package:ride_share_app/models/user_model.dart';
 
@@ -213,6 +217,33 @@ class DatabaseService {
     }
   }
 
+
+  Future<String> uploadProfilePicture(XFile image) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$_baseUrl/users/profile/upload'),
+      );
+      request.headers.addAll(_getHeaders());
+      request.files.add(await http.MultipartFile.fromPath('profilePicture', image.path));
+
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseData = await response.stream.bytesToString();
+        final decodedData = json.decode(responseData);
+        return decodedData['profilePictureUrl'];
+      } else {
+        final responseData = await response.stream.bytesToString();
+        final errorData = json.decode(responseData);
+        print("Backend Error (Upload Profile Picture): ${errorData['message']}");
+        throw Exception(errorData['message'] ?? 'Failed to upload profile picture');
+      }
+    } catch (e) {
+      print("Error uploading profile picture: $e");
+      rethrow;
+    }
+  }
 
   Future<void> updateUserProfile(Map<String, dynamic> userData) async {
     try {

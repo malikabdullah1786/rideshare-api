@@ -68,6 +68,10 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    profilePictureUrl: {
+      type: String,
+      default: '',
+    },
     isApproved: {
       type: Boolean,
       default: false,

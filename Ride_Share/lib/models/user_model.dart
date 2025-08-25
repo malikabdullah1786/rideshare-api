@@ -16,6 +16,7 @@ class AppUser {
   final bool emailVerified; // From Firebase Auth
   final bool profileCompleted; // Indicates if extended profile is saved to MongoDB
   final bool isApproved; // New field for admin approval
+  final String? profilePictureUrl;
   final String? carModel; // Driver specific
   final String? carRegistration; // Driver specific
   final int? seatsAvailable; // Driver specific
@@ -36,6 +37,7 @@ class AppUser {
     this.emailVerified = false, // Default from Firebase Auth
     this.profileCompleted = false, // Default to false until MongoDB profile is saved
     this.isApproved = false, // Default to false
+    this.profilePictureUrl,
     this.carModel,
     this.carRegistration,
     this.seatsAvailable,
@@ -59,6 +61,7 @@ class AppUser {
       emailVerified: data['emailVerified'] ?? false,
       profileCompleted: data['profileCompleted'] ?? false,
       isApproved: data['isApproved'] ?? false,
+      profilePictureUrl: data['profilePictureUrl'],
       carModel: data['carModel'],
       carRegistration: data['carRegistration'],
       seatsAvailable: data['seatsAvailable'],
@@ -105,6 +108,8 @@ class AppUser {
     String? userType,
     bool? emailVerified,
     bool? profileCompleted,
+    bool? isApproved,
+    String? profilePictureUrl,
     String? carModel,
     String? carRegistration,
     int? seatsAvailable,
@@ -123,6 +128,8 @@ class AppUser {
       userType: userType ?? this.userType,
       emailVerified: emailVerified ?? this.emailVerified,
       profileCompleted: profileCompleted ?? this.profileCompleted,
+      isApproved: isApproved ?? this.isApproved,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
       carModel: carModel ?? this.carModel,
       carRegistration: carRegistration ?? this.carRegistration,
       seatsAvailable: seatsAvailable ?? this.seatsAvailable,

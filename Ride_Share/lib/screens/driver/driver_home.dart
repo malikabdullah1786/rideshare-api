@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:ride_share_app/constants/colors.dart';
 import 'package:ride_share_app/providers/auth_provider.dart';
 import 'package:ride_share_app/screens/driver/post_ride.dart';
@@ -26,6 +27,25 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   void initState() {
     super.initState();
     _loadDriverDashboardData();
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      try {
+        final dbService = Provider.of<AppAuthProvider>(context, listen: false).databaseService;
+        final newImageUrl = await dbService.uploadProfilePicture(image);
+        Provider.of<AppAuthProvider>(context, listen: false).updateUserProfilePicture(newImageUrl);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload image: $e')),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _loadDriverDashboardData() async {
@@ -185,9 +205,32 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Welcome, Driver ${appAuthProvider.appUser?.name ?? ''}!',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundImage: NetworkImage(appAuthProvider.appUser?.profilePictureUrl ?? ''),
+                  child: appAuthProvider.appUser?.profilePictureUrl == null || appAuthProvider.appUser!.profilePictureUrl!.isEmpty
+                      ? const Icon(Icons.person, size: 30)
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Welcome, Driver ${appAuthProvider.appUser?.name ?? ''}!',
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      TextButton(
+                        onPressed: _pickAndUploadImage,
+                        child: const Text('Change Profile Picture'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: screenSize.height * 0.02),
             Card(
