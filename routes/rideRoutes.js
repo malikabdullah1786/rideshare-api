@@ -12,11 +12,13 @@ const {
   getDriverEarnings,
   rateDriver,
   adjustFare,
+  calculateFare,
 } = require('../controllers/rideController'); // Ensure all functions are imported
 
 const { protect } = require('../middleware/authMiddleware');
 
 // Public routes (or accessible to all authenticated users)
+router.post('/calculate-fare', protect, calculateFare); // Calculate fare for a ride
 router.get('/', protect, getRides); // Get all active rides with filters
 
 // Driver specific routes

@@ -540,6 +540,43 @@ const adjustFare = async (req, res) => {
   }
 };
 
+// @desc    Calculate a suggested fare for a ride
+// @route   POST /api/rides/calculate-fare
+// @access  Private
+const calculateFare = async (req, res) => {
+  const { from, to } = req.body;
+
+  if (!from || !to) {
+    return res.status(400).json({ message: 'Please provide both origin and destination.' });
+  }
+
+  try {
+    const origin = await geocodeAddress(from);
+    const destination = await geocodeAddress(to);
+
+    const distanceMatrix = await getDistanceMatrix(origin, destination);
+
+    // Pricing formula: Base Fare + (distance in km * rate per km)
+    const baseFare = 100; // e.g., 100 PKR
+    const pricePerKm = 50; // e.g., 50 PKR per kilometer
+    const distanceInKm = distanceMatrix.distance.value / 1000;
+
+    let suggestedPrice = baseFare + (distanceInKm * pricePerKm);
+
+    // Round to the nearest 10 for a cleaner price
+    suggestedPrice = Math.round(suggestedPrice / 10) * 10;
+
+    res.status(200).json({
+      suggestedPrice: suggestedPrice,
+      distance: distanceMatrix.distance.text,
+      duration: distanceMatrix.duration.text,
+    });
+  } catch (error) {
+    console.error('Error calculating fare:', error);
+    res.status(500).json({ message: 'Server error calculating fare.' });
+  }
+};
+
 module.exports = {
   postRide,
   getRides,
@@ -552,4 +589,5 @@ module.exports = {
   getMyBookedRides,
   getDriverEarnings,
   rateDriver,
+  calculateFare,
 };

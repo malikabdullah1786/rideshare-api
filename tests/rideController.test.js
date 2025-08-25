@@ -113,4 +113,28 @@ describe('Ride Controller', () => {
       expect(res.body.ride.price).toBe(15);
     });
   });
+  describe('POST /api/rides/calculate-fare', () => {
+    it('should calculate and return a suggested fare', async () => {
+      geocodeAddress.mockResolvedValue({ lat: 1, lng: 1 });
+      getDistanceMatrix.mockResolvedValue({
+        distance: { text: '20 km', value: 20000 }, // 20 km
+        duration: { text: '45 mins', value: 2700 },
+      });
+
+      const res = await request(app)
+        .post('/api/rides/calculate-fare')
+        .send({
+          from: 'Test Origin',
+          to: 'Test Destination',
+        });
+
+      // Based on formula: baseFare (100) + (20km * 50/km) = 1100
+      const expectedPrice = 1100;
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body).toHaveProperty('suggestedPrice', expectedPrice);
+      expect(res.body).toHaveProperty('distance', '20 km');
+      expect(res.body).toHaveProperty('duration', '45 mins');
+    });
+  });
 });

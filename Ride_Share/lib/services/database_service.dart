@@ -628,6 +628,49 @@ class DatabaseService {
     }
   }
 
+  // --- Map & Fare Operations ---
+
+  Future<String> reverseGeocode(double lat, double lng) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/maps/reverse-geocode'),
+        headers: _getHeaders(),
+        body: json.encode({'lat': lat, 'lng': lng}),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return responseData['address'];
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to reverse geocode.');
+      }
+    } catch (e) {
+      print("Error reverse geocoding: $e");
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> calculateFare(String from, String to) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/rides/calculate-fare'),
+        headers: _getHeaders(),
+        body: json.encode({'from': from, 'to': to}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to calculate fare.');
+      }
+    } catch (e) {
+      print("Error calculating fare: $e");
+      rethrow;
+    }
+  }
+
   // --- Admin Operations ---
 
   Future<List<dynamic>> getAllUsers() async {
