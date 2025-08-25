@@ -1,4 +1,25 @@
-import 'package:cloud_firestore/cloud_firestore.dart'; // Keep if you use Firestore for rides, otherwise remove
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+// A simple class to hold latitude and longitude.
+class Location {
+  final double latitude;
+  final double longitude;
+
+  Location({required this.latitude, required this.longitude});
+
+  // Factory constructor to create a Location from a map (like the one from backend)
+  factory Location.fromMap(Map<String, dynamic>? data) {
+    if (data == null) {
+      // Return a default or handle the error as appropriate for your app
+      return Location(latitude: 0.0, longitude: 0.0);
+    }
+    return Location(
+      // Safely parse the latitude and longitude, providing defaults if null
+      latitude: (data['lat'] as num?)?.toDouble() ?? 0.0,
+      longitude: (data['lng'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
 
 
 
@@ -168,6 +189,10 @@ class Ride {
 
   final String to;
 
+  final Location origin;
+
+  final Location destination;
+
   final int price;
 
   final int seats;
@@ -201,6 +226,10 @@ class Ride {
     required this.from,
 
     required this.to,
+
+    required this.origin,
+
+    required this.destination,
 
     required this.price,
 
@@ -293,7 +322,8 @@ class Ride {
       from: data['from'],
 
       to: data['to'],
-
+      origin: Location.fromMap(data['origin'] as Map<String, dynamic>?),
+      destination: Location.fromMap(data['destination'] as Map<String, dynamic>?),
       price: data['price'],
 
       seats: data['seats'],
