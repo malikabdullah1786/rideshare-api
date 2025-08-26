@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:ride_share_app/firebase_options.dart';
 
 import 'package:ride_share_app/providers/auth_provider.dart'; // Import AppAuthProvider
-
+import 'package:ride_share_app/providers/settings_provider.dart';
 import 'package:ride_share_app/screens/auth_screen.dart';
 
 import 'package:ride_share_app/screens/home_screen.dart'; // Ensure this import is correct and present
@@ -47,9 +47,8 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
 
       providers: [
-
         ChangeNotifierProvider(create: (_) => AppAuthProvider()),
-
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
 
       child: MaterialApp(

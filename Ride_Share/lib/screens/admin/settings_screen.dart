@@ -16,6 +16,9 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _commissionController = TextEditingController();
+  final _bookingLeadTimeController = TextEditingController();
+  final _riderCancellationController = TextEditingController();
+  final _driverCancellationController = TextEditingController();
   bool _isLoading = true;
 
   @override
@@ -31,7 +34,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final settings = await dbService.getSettings();
       if (mounted) {
         setState(() {
-          _commissionController.text = ((settings['commissionRate'] ?? 0.15) * 100).toString(); // Convert to percentage
+          _commissionController.text = ((settings['commissionRate'] ?? 0.15) * 100).toString();
+          _bookingLeadTimeController.text = (settings['bookingLeadTimeMinutes'] ?? 10).toString();
+          _riderCancellationController.text = (settings['riderCancellationCutoffHours'] ?? 2).toString();
+          _driverCancellationController.text = (settings['driverCancellationCutoffHours'] ?? 4).toString();
         });
       }
     } catch (e) {
@@ -46,8 +52,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() => _isLoading = true);
       try {
         final dbService = Provider.of<AppAuthProvider>(context, listen: false).databaseService;
+
         final commissionPercentage = double.parse(_commissionController.text.trim());
-        await dbService.updateSetting('commissionRate', commissionPercentage / 100); // Convert back to decimal
+        await dbService.updateSetting('commissionRate', commissionPercentage / 100);
+
+        final bookingLeadTime = int.parse(_bookingLeadTimeController.text.trim());
+        await dbService.updateSetting('bookingLeadTimeMinutes', bookingLeadTime);
+
+        final riderCutoff = int.parse(_riderCancellationController.text.trim());
+        await dbService.updateSetting('riderCancellationCutoffHours', riderCutoff);
+
+        final driverCutoff = int.parse(_driverCancellationController.text.trim());
+        await dbService.updateSetting('driverCancellationCutoffHours', driverCutoff);
+
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved successfully!'), backgroundColor: AppColors.secondaryColor));
       } catch (e) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save settings: $e'), backgroundColor: AppColors.errorColor));
@@ -60,6 +77,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _commissionController.dispose();
+    _bookingLeadTimeController.dispose();
+    _riderCancellationController.dispose();
+    _driverCancellationController.dispose();
     super.dispose();
   }
 
@@ -72,43 +92,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: _isLoading
           ? const Center(child: LoadingIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Commission Rate (%)',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    CustomTextField(
-                      controller: _commissionController,
-                      labelText: 'e.g., 15 for 15%',
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Commission rate is required.';
-                        }
-                        final rate = double.tryParse(value);
-                        if (rate == null || rate < 0 || rate > 100) {
-                          return 'Please enter a valid percentage between 0 and 100.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    CustomButton(
-                      text: 'Save Settings',
-                      onPressed: _saveSettings,
-                      color: AppColors.primaryColor,
-                    ),
-                  ],
+          : SingleChildScrollView(
+            child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Commission Rate (%)', style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      CustomTextField(
+                        controller: _commissionController,
+                        labelText: 'e.g., 15 for 15%',
+                        keyboardType: TextInputType.number,
+                        validator: (v) => (double.tryParse(v!) == null || double.parse(v) < 0 || double.parse(v) > 100) ? 'Enter a % between 0-100' : null,
+                      ),
+                      const SizedBox(height: 20),
+
+                      Text('Booking Lead Time (Minutes)', style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      CustomTextField(
+                        controller: _bookingLeadTimeController,
+                        labelText: 'e.g., 10 minutes',
+                        keyboardType: TextInputType.number,
+                        validator: (v) => (int.tryParse(v!) == null || int.parse(v) < 0) ? 'Enter a valid number of minutes' : null,
+                      ),
+                      const SizedBox(height: 20),
+
+                      Text('Rider Cancellation Cutoff (Hours)', style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      CustomTextField(
+                        controller: _riderCancellationController,
+                        labelText: 'e.g., 2 hours',
+                        keyboardType: TextInputType.number,
+                        validator: (v) => (int.tryParse(v!) == null || int.parse(v) < 0) ? 'Enter a valid number of hours' : null,
+                      ),
+                      const SizedBox(height: 20),
+
+                      Text('Driver Cancellation Cutoff (Hours)', style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      CustomTextField(
+                        controller: _driverCancellationController,
+                        labelText: 'e.g., 4 hours',
+                        keyboardType: TextInputType.number,
+                        validator: (v) => (int.tryParse(v!) == null || int.parse(v) < 0) ? 'Enter a valid number of hours' : null,
+                      ),
+                      const SizedBox(height: 24),
+
+                      CustomButton(
+                        text: 'Save Settings',
+                        onPressed: _saveSettings,
+                        color: AppColors.primaryColor,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+          ),
     );
   }
 }

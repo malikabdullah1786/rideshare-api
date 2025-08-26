@@ -13,6 +13,7 @@ const {
   rateDriver,
   adjustFare,
   calculateFare,
+  cancelPassengerBooking,
 } = require('../controllers/rideController'); // Ensure all functions are imported
 
 const { protect } = require('../middleware/authMiddleware');
@@ -28,6 +29,7 @@ router.put('/:id/cancel-ride', protect, cancelRide); // Driver cancels their rid
 router.put('/:id/complete-ride', protect, completeRide); // Driver marks ride as complete
 router.put('/:id/adjust-fare', protect, adjustFare); // Driver adjusts the fare of a ride
 router.get('/earnings', protect, getDriverEarnings); // Get driver's earnings
+router.put('/:rideId/passengers/:bookingId/cancel-by-driver', protect, cancelPassengerBooking); // Driver cancels a specific passenger's booking
 
 // Rider specific routes
 router.post('/:id/book', protect, bookRide); // Book a seat on a ride (This is likely line 19)

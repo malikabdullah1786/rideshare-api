@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ride_share_app/constants/colors.dart';
 import 'package:ride_share_app/providers/auth_provider.dart';
+import 'package:ride_share_app/providers/settings_provider.dart';
+import 'package:ride_share_app/models/settings_model.dart';
 import 'package:ride_share_app/screens/driver/post_ride.dart';
 import 'package:ride_share_app/widgets/custom_button.dart';
 import 'package:ride_share_app/widgets/loading_indicator.dart';
@@ -157,6 +159,54 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     );
   }
 
+  Future<void> _showDriverCancelPassengerDialog(String rideId, String bookingId) async {
+    final TextEditingController reasonController = TextEditingController();
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Cancel Passenger Booking'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Please provide a reason for cancelling this passenger\'s booking:'),
+                const SizedBox(height: 10),
+                CustomTextField(controller: reasonController, labelText: 'Reason', maxLines: 3),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Back'),
+              onPressed: () {
+                reasonController.dispose();
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            CustomButton(
+              text: 'Confirm Cancellation',
+              onPressed: () async {
+                final String reason = reasonController.text.trim();
+                if(reason.isEmpty){
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('Reason cannot be empty.')));
+                  return;
+                }
+                reasonController.dispose();
+                Navigator.of(dialogContext).pop();
+                await _driverCancelPassengerBooking(rideId, bookingId, reason);
+              },
+              color: AppColors.errorColor,
+              width: 200,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
   Future<void> _cancelRide(String rideId, String? reason) async {
     setState(() => _isLoadingRides = true);
     try {
@@ -180,6 +230,20 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       _loadDriverDashboardData();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to cancel ride as admin: $e')));
+    } finally {
+      if(mounted) setState(() => _isLoadingRides = false);
+    }
+  }
+
+  Future<void> _driverCancelPassengerBooking(String rideId, String bookingId, String reason) async {
+    setState(() => _isLoadingRides = true);
+    try {
+      final databaseService = Provider.of<AppAuthProvider>(context, listen: false).databaseService;
+      await databaseService.driverCancelPassengerBooking(rideId, bookingId, reason);
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passenger booking cancelled successfully!')));
+      _loadDriverDashboardData();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to cancel passenger booking: $e')));
     } finally {
       if(mounted) setState(() => _isLoadingRides = false);
     }
@@ -328,8 +392,19 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                                                     Text('   Pickup: ${passenger.pickupAddress}'),
                                                     Text('   Drop-off: ${passenger.dropoffAddress}'),
                                                     Text('   Booking Status: ${passenger.status.toUpperCase()}'),
-                                                    if (passenger.status == 'cancelled_by_rider' && passenger.cancellationReason != null && passenger.cancellationReason!.isNotEmpty)
-                                                      Text('   Rider Reason: ${passenger.cancellationReason}', style: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.hintColor)),
+                                                    if (passenger.cancellationReason != null && passenger.cancellationReason!.isNotEmpty)
+                                                      Padding(
+                                                        padding: const EdgeInsets.only(left: 12.0, top: 2.0),
+                                                        child: Text('Reason: ${passenger.cancellationReason}', style: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.hintColor)),
+                                                      ),
+                                                    if (passenger.status == 'accepted' && !isCancelled && !isCompleted)
+                                                      Align(
+                                                        alignment: Alignment.centerRight,
+                                                        child: TextButton(
+                                                          onPressed: () => _showDriverCancelPassengerDialog(ride.id, passenger.id!), // Assuming passenger has an id
+                                                          child: const Text('Cancel Booking', style: TextStyle(color: AppColors.errorColor, fontSize: 12)),
+                                                        ),
+                                                      ),
                                                   ],
                                                 ),
                                               );
@@ -342,7 +417,24 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                                         children: [
                                           if (!isAdmin && !isCompleted && !isCancelled && isPastDeparture) Expanded(child: CustomButton(text: 'Mark Completed', onPressed: () => _completeRide(ride.id), color: AppColors.secondaryColor)),
                                           if (!isAdmin && !isCompleted && !isCancelled && !isPastDeparture) const SizedBox(width: 10),
-                                          if (!isAdmin && !isCompleted && !isCancelled && !isPastDeparture) Expanded(child: CustomButton(text: 'Cancel Ride', onPressed: () => _showCancelRideDialog(ride.id), color: AppColors.errorColor)),
+                                          if (!isAdmin && !isCompleted && !isCancelled && !isPastDeparture)
+                                            Builder(
+                                              builder: (context) {
+                                                final settings = Provider.of<SettingsProvider>(context).settings;
+                                                if (settings == null) return const SizedBox.shrink();
+
+                                                final now = DateTime.now();
+                                                final cancelDeadline = ride.departureTime.subtract(Duration(hours: settings.cancellationTimeLimitHoursDriver));
+
+                                                if (now.isAfter(cancelDeadline)) {
+                                                  return Tooltip(
+                                                    message: 'Cancellation window has passed.',
+                                                    child: Expanded(child: CustomButton(text: 'Cancel', onPressed: null, color: AppColors.hintColor)),
+                                                  );
+                                                }
+                                                return Expanded(child: CustomButton(text: 'Cancel Ride', onPressed: () => _showCancelRideDialog(ride.id), color: AppColors.errorColor));
+                                              }
+                                            ),
                                           if (isAdmin && !isCompleted && !isCancelled) Expanded(child: CustomButton(text: 'Cancel Ride (Admin)', onPressed: () => _showAdminCancelRideDialog(ride.id), color: AppColors.errorColor)),
                                         ],
                                       ),

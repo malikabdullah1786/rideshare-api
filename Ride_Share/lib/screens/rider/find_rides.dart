@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:location/location.dart';
 import 'package:ride_share_app/constants/colors.dart';
 import 'package:ride_share_app/providers/auth_provider.dart';
+import 'package:ride_share_app/providers/settings_provider.dart';
+import 'package:ride_share_app/models/settings_model.dart';
 import 'package:ride_share_app/widgets/custom_button.dart';
 import 'package:ride_share_app/widgets/custom_textfield.dart';
 import 'package:ride_share_app/widgets/loading_indicator.dart';
@@ -356,9 +358,24 @@ class _FindRidesScreenState extends State<FindRidesScreen> {
                                     Text('Seats Available: ${ride.seatsAvailable}/${ride.seats}'),
                                     const SizedBox(height: 10),
                                     if (ride.seatsAvailable > 0)
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: CustomButton(text: 'Book Ride', onPressed: () => _showBookingDialog(ride), color: AppColors.secondaryColor),
+                                      Builder(
+                                        builder: (context) {
+                                          final settings = Provider.of<SettingsProvider>(context).settings;
+                                          if (settings == null) {
+                                            return const Text('Booking unavailable: Settings not loaded');
+                                          }
+                                          final now = DateTime.now();
+                                          final bookingDeadline = ride.departureTime.subtract(Duration(hours: settings.bookingTimeLimitHours));
+
+                                          if (now.isAfter(bookingDeadline)) {
+                                            return Text('Booking closed', style: TextStyle(color: AppColors.errorColor));
+                                          }
+
+                                          return Align(
+                                            alignment: Alignment.centerRight,
+                                            child: CustomButton(text: 'Book Ride', onPressed: () => _showBookingDialog(ride), color: AppColors.secondaryColor),
+                                          );
+                                        }
                                       )
                                     else
                                       const Text('No seats available', style: TextStyle(color: AppColors.errorColor)),

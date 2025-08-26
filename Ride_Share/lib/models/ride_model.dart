@@ -27,6 +27,7 @@ class Location {
 
 class PassengerBooking {
 
+  final String? id;
   final String userId; // ID of the rider who booked
 
   final int bookedSeats;
@@ -52,7 +53,7 @@ class PassengerBooking {
 
 
   PassengerBooking({
-
+    this.id,
     required this.userId,
 
     required this.bookedSeats,
@@ -112,7 +113,7 @@ class PassengerBooking {
 
 
     return PassengerBooking(
-
+      id: data['_id'],
       userId: extractedUserId,
 
       bookedSeats: data['bookedSeats'] ?? 0,

@@ -137,4 +137,62 @@ describe('Ride Controller', () => {
       expect(res.body).toHaveProperty('duration', '45 mins');
     });
   });
+  describe('PUT /api/rides/:rideId/passengers/:bookingId/cancel-by-driver', () => {
+    it('should allow a driver to cancel a specific passenger booking', async () => {
+      const passenger = await User.create({
+        _id: new mongoose.Types.ObjectId(),
+        firebaseUid: 'test-passenger-uid',
+        userType: 'rider',
+        name: 'Test Passenger',
+        email: 'passenger@test.com',
+        password: 'password',
+        phone: '03009876543',
+        cnic: '54321-1234567-8',
+        address: '456 Test Street',
+        emergencyContact: '03001234567',
+        gender: 'Male',
+        age: 25,
+        isApproved: true,
+      });
+
+      const ride = await Ride.create({
+        driver: mockDriver._id,
+        driverName: 'Test Driver',
+        driverPhone: '1234567890',
+        from: 'Test Origin',
+        to: 'Test Destination',
+        price: 10,
+        seats: 3,
+        seatsAvailable: 2,
+        departureTime: new Date(),
+        status: 'active',
+        passengers: [
+          {
+            user: passenger._id,
+            bookedSeats: 1,
+            pickupAddress: 'Passenger Pickup',
+            dropoffAddress: 'Passenger Dropoff',
+            contactPhone: '03009876543',
+            status: 'accepted',
+          }
+        ]
+      });
+
+      const bookingId = ride.passengers[0]._id;
+      const cancellationReason = 'Passenger did not show up.';
+
+      const res = await request(app)
+        .put(`/api/rides/${ride._id}/passengers/${bookingId}/cancel-by-driver`)
+        .send({ cancellationReason });
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.message).toBe('Passenger booking cancelled successfully.');
+
+      const updatedRide = await Ride.findById(ride._id);
+      const updatedBooking = updatedRide.passengers.id(bookingId);
+      expect(updatedBooking.status).toBe('cancelled_by_driver');
+      expect(updatedBooking.cancellationReason).toBe(cancellationReason);
+      expect(updatedRide.seatsAvailable).toBe(3); // 2 + 1
+    });
+  });
 });

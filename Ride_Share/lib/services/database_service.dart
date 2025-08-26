@@ -134,6 +134,24 @@ class DatabaseService {
     }
   }
 
+  Future<void> driverCancelPassengerBooking(String rideId, String bookingId, String reason) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$_baseUrl/rides/$rideId/passengers/$bookingId/cancel-by-driver'),
+        headers: _getHeaders(),
+        body: json.encode({'cancellationReason': reason}),
+      );
+
+      if (response.statusCode != 200) {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to cancel passenger booking.');
+      }
+    } catch (e) {
+      print("Error cancelling passenger booking by driver: $e");
+      rethrow;
+    }
+  }
+
 
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
     try {
@@ -746,19 +764,21 @@ class DatabaseService {
     }
   }
 
-  Future<void> updateSetting(String key, dynamic value) async {
+  Future<Map<String, dynamic>> updateSettings(Map<String, dynamic> settings) async {
     try {
       final response = await http.put(
         Uri.parse('$_baseUrl/admin/settings'),
         headers: _getHeaders(),
-        body: json.encode({'key': key, 'value': value}),
+        body: json.encode(settings),
       );
-      if (response.statusCode != 200) {
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to update setting.');
+        throw Exception(errorData['message'] ?? 'Failed to update settings.');
       }
     } catch (e) {
-      print("Error updating setting: $e");
+      print("Error updating settings: $e");
       rethrow;
     }
   }

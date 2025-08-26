@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ride_share_app/constants/colors.dart';
 import 'package:ride_share_app/providers/auth_provider.dart';
+import 'package:ride_share_app/providers/settings_provider.dart';
+import 'package:ride_share_app/models/settings_model.dart';
 import 'package:ride_share_app/screens/rider/find_rides.dart';
 import 'package:ride_share_app/screens/ride_tracking_screen.dart';
 import 'package:ride_share_app/widgets/custom_button.dart';
@@ -278,15 +280,35 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                                       Text('Your Contact: ${currentUserBooking.contactPhone}'),
                                       Text('Ride Status: ${ride.status.toUpperCase()}'),
                                       Text('Booking Status: ${currentUserBooking.status.toUpperCase()}'),
-                                      if (isBookingCancelled && currentUserBooking.cancellationReason != null && currentUserBooking.cancellationReason!.isNotEmpty)
-                                        Text('Reason: ${currentUserBooking.cancellationReason}', style: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.hintColor)),
+                                      if (ride.cancellationReason != null && ride.cancellationReason!.isNotEmpty)
+                                        Text('Ride Cancel Reason: ${ride.cancellationReason}', style: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.errorColor)),
+                                      if (currentUserBooking.cancellationReason != null && currentUserBooking.cancellationReason!.isNotEmpty)
+                                        Text('Booking Cancel Reason: ${currentUserBooking.cancellationReason}', style: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.hintColor)),
                                       const SizedBox(height: 10),
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                         children: [
                                           if (isRideActive && isBookingAccepted) Expanded(child: CustomButton(text: 'Track Ride', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RideTrackingScreen(ride: ride))), color: AppColors.infoColor)),
                                           if (isRideActive && isBookingAccepted && ride.departureTime.isAfter(DateTime.now())) const SizedBox(width: 10),
-                                          if (isRideActive && isBookingAccepted && ride.departureTime.isAfter(DateTime.now())) Expanded(child: CustomButton(text: 'Cancel My Booking', onPressed: () => _showCancelBookingDialog(ride.id), color: AppColors.errorColor)),
+                                          if (isRideActive && isBookingAccepted && ride.departureTime.isAfter(DateTime.now()))
+                                            Builder(
+                                              builder: (context) {
+                                                final settings = Provider.of<SettingsProvider>(context).settings;
+                                                if (settings == null) return const SizedBox.shrink();
+
+                                                final now = DateTime.now();
+                                                final cancelDeadline = ride.departureTime.subtract(Duration(hours: settings.cancellationTimeLimitHoursPassenger));
+
+                                                if (now.isAfter(cancelDeadline)) {
+                                                  return Tooltip(
+                                                    message: 'Cancellation window has passed.',
+                                                    child: Expanded(child: CustomButton(text: 'Cancel', onPressed: null, color: AppColors.hintColor)),
+                                                  );
+                                                }
+
+                                                return Expanded(child: CustomButton(text: 'Cancel My Booking', onPressed: () => _showCancelBookingDialog(ride.id), color: AppColors.errorColor));
+                                              }
+                                            ),
                                           if (isRideCompleted && isBookingCompletedByDriver) Expanded(child: CustomButton(text: 'Rate Driver', onPressed: () => _showRatingDialog(ride.id), color: AppColors.primaryColor)),
                                         ],
                                       ),

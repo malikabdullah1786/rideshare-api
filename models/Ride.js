@@ -24,7 +24,7 @@ const passengerBookingSchema = mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['accepted', 'pending', 'cancelled_by_rider', 'completed_by_driver'],
+    enum: ['accepted', 'pending', 'cancelled_by_rider', 'completed_by_driver', 'cancelled_by_driver'],
     default: 'accepted',
   },
   createdAt: {
