@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Ride = require('../models/Ride');
 
 // @desc    Get all users
 // @route   GET /api/admin/users
@@ -41,8 +42,38 @@ const updateUserPermissions = async (req, res) => {
   res.json({ message: `Permissions updated for user ${req.params.id}` });
 };
 
+// @desc    Cancel any ride by an admin
+// @route   PUT /api/admin/rides/:id/cancel
+// @access  Private/Admin
+const adminCancelRide = async (req, res) => {
+  const { cancellationReason } = req.body;
+  if (!cancellationReason) {
+    return res.status(400).json({ message: 'Cancellation reason is required.' });
+  }
+
+  try {
+    const ride = await Ride.findById(req.params.id);
+
+    if (ride) {
+      if (ride.status === 'cancelled' || ride.status === 'completed') {
+        return res.status(400).json({ message: `Ride is already ${ride.status}.` });
+      }
+      ride.status = 'cancelled';
+      ride.cancellationReason = `Cancelled by Admin: ${cancellationReason}`;
+      await ride.save();
+      res.json({ message: 'Ride has been cancelled by admin.' });
+    } else {
+      res.status(404).json({ message: 'Ride not found' });
+    }
+  } catch (error) {
+    console.error('Error cancelling ride by admin:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 module.exports = {
   getUsers,
   approveUserProfile,
   updateUserPermissions,
+  adminCancelRide,
 };

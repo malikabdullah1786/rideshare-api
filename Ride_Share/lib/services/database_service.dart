@@ -710,4 +710,22 @@ class DatabaseService {
       rethrow;
     }
   }
+
+  Future<void> adminCancelRide(String rideId, String reason) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$_baseUrl/admin/rides/$rideId/cancel'),
+        headers: _getHeaders(),
+        body: json.encode({'cancellationReason': reason}),
+      );
+
+      if (response.statusCode != 200) {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to cancel ride as admin.');
+      }
+    } catch (e) {
+      print("Error cancelling ride as admin: $e");
+      rethrow;
+    }
+  }
 }

@@ -4,6 +4,7 @@ const {
   getUsers,
   approveUserProfile,
   updateUserPermissions,
+  adminCancelRide,
 } = require('../controllers/adminController');
 const { protect } = require('../middleware/authMiddleware');
 const { admin } = require('../middleware/adminMiddleware');
@@ -12,5 +13,8 @@ const { admin } = require('../middleware/adminMiddleware');
 router.route('/users').get(protect, admin, getUsers);
 router.route('/users/:id/approve').put(protect, admin, approveUserProfile);
 router.route('/users/:id/permissions').put(protect, admin, updateUserPermissions);
+
+// Admin routes for managing rides
+router.route('/rides/:id/cancel').put(protect, admin, adminCancelRide);
 
 module.exports = router;

@@ -109,6 +109,53 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     );
   }
 
+  Future<void> _showAdminCancelRideDialog(String rideId) async {
+    final TextEditingController reasonController = TextEditingController();
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Admin: Cancel Ride'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('You are cancelling this ride as an admin. Please provide a reason:'),
+                const SizedBox(height: 10),
+                CustomTextField(controller: reasonController, labelText: 'Admin Cancellation Reason', maxLines: 3),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Back'),
+              onPressed: () {
+                reasonController.dispose();
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            CustomButton(
+              text: 'Confirm Admin Cancel',
+              onPressed: () async {
+                final String reason = reasonController.text.trim();
+                if(reason.isEmpty){
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('Admin reason cannot be empty.')));
+                  return;
+                }
+                reasonController.dispose();
+                Navigator.of(dialogContext).pop();
+                await _adminCancelRide(rideId, reason);
+              },
+              color: AppColors.errorColor,
+              width: 200,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _cancelRide(String rideId, String? reason) async {
     setState(() => _isLoadingRides = true);
     try {
@@ -119,7 +166,21 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to cancel ride: $e')));
     } finally {
-      setState(() => _isLoadingRides = false);
+      if(mounted) setState(() => _isLoadingRides = false);
+    }
+  }
+
+  Future<void> _adminCancelRide(String rideId, String reason) async {
+    setState(() => _isLoadingRides = true);
+    try {
+      final databaseService = Provider.of<AppAuthProvider>(context, listen: false).databaseService;
+      await databaseService.adminCancelRide(rideId, reason);
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride cancelled by admin successfully!')));
+      _loadDriverDashboardData();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to cancel ride as admin: $e')));
+    } finally {
+      if(mounted) setState(() => _isLoadingRides = false);
     }
   }
 
@@ -133,7 +194,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to complete ride: $e')));
     } finally {
-      setState(() => _isLoadingRides = false);
+      if(mounted) setState(() => _isLoadingRides = false);
     }
   }
 
@@ -141,9 +202,11 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Widget build(BuildContext context) {
     final appAuthProvider = Provider.of<AppAuthProvider>(context);
     final screenSize = MediaQuery.of(context).size;
+    final bool isAdmin = appAuthProvider.appUser?.userType == 'admin';
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Driver Dashboard'),
+        title: Text(isAdmin ? 'Admin Dashboard' : 'Driver Dashboard'),
         backgroundColor: AppColors.primaryColor,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadDriverDashboardData),
@@ -167,59 +230,61 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Welcome, Driver ${appAuthProvider.appUser?.name ?? ''}!', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      Text('Welcome, ${isAdmin ? "Admin" : "Driver"} ${appAuthProvider.appUser?.name ?? ''}!', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                       TextButton(onPressed: _pickAndUploadImage, child: const Text('Change Profile Picture')),
                     ],
                   ),
                 ),
               ],
             ),
-            SizedBox(height: screenSize.height * 0.02),
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Text('Total Earnings', style: TextStyle(fontSize: 16, color: AppColors.hintColor), textAlign: TextAlign.center),
-                          Text('PKR ${_totalEarnings.toStringAsFixed(2)}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.secondaryColor)),
-                        ],
+            if(!isAdmin) ...[
+              SizedBox(height: screenSize.height * 0.02),
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text('Total Earnings', style: TextStyle(fontSize: 16, color: AppColors.hintColor), textAlign: TextAlign.center),
+                            Text('PKR ${_totalEarnings.toStringAsFixed(2)}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.secondaryColor)),
+                          ],
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Text('Completed Rides', style: TextStyle(fontSize: 16, color: AppColors.hintColor), textAlign: TextAlign.center),
-                          Text('$_completedRideCount', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
-                        ],
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text('Completed Rides', style: TextStyle(fontSize: 16, color: AppColors.hintColor), textAlign: TextAlign.center),
+                            Text('$_completedRideCount', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: screenSize.height * 0.03),
-            CustomButton(
-              text: 'Post a Ride',
-              onPressed: () async {
-                await Navigator.push(context, MaterialPageRoute(builder: (context) => const PostRideScreen()));
-                _loadDriverDashboardData();
-              },
-              color: AppColors.primaryColor,
-            ),
+              SizedBox(height: screenSize.height * 0.03),
+              CustomButton(
+                text: 'Post a Ride',
+                onPressed: () async {
+                  await Navigator.push(context, MaterialPageRoute(builder: (context) => const PostRideScreen()));
+                  _loadDriverDashboardData();
+                },
+                color: AppColors.primaryColor,
+              ),
+            ],
             SizedBox(height: screenSize.height * 0.02),
-            const Text('Your Posted Rides History:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(isAdmin ? 'All Posted Rides:' : 'Your Posted Rides History:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: screenSize.height * 0.01),
             _isLoadingRides
                 ? const Center(child: LoadingIndicator())
                 : Expanded(
                     child: _postedRides.isEmpty
-                        ? Center(child: Text('No rides posted yet. Post your first ride!', style: TextStyle(color: AppColors.hintColor)))
+                        ? Center(child: Text(isAdmin ? 'No rides posted by anyone.' : 'No rides posted yet. Post your first ride!', style: TextStyle(color: AppColors.hintColor)))
                         : ListView.builder(
                             itemCount: _postedRides.length,
                             itemBuilder: (context, index) {
@@ -274,9 +339,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                         children: [
-                                          if (!isCompleted && !isCancelled && isPastDeparture) Expanded(child: CustomButton(text: 'Mark Completed', onPressed: () => _completeRide(ride.id), color: AppColors.secondaryColor)),
-                                          if (!isCompleted && !isCancelled && !isPastDeparture) const SizedBox(width: 10),
-                                          if (!isCompleted && !isCancelled && !isPastDeparture) Expanded(child: CustomButton(text: 'Cancel Ride', onPressed: () => _showCancelRideDialog(ride.id), color: AppColors.errorColor)),
+                                          if (!isAdmin && !isCompleted && !isCancelled && isPastDeparture) Expanded(child: CustomButton(text: 'Mark Completed', onPressed: () => _completeRide(ride.id), color: AppColors.secondaryColor)),
+                                          if (!isAdmin && !isCompleted && !isCancelled && !isPastDeparture) const SizedBox(width: 10),
+                                          if (!isAdmin && !isCompleted && !isCancelled && !isPastDeparture) Expanded(child: CustomButton(text: 'Cancel Ride', onPressed: () => _showCancelRideDialog(ride.id), color: AppColors.errorColor)),
+                                          if (isAdmin && !isCompleted && !isCancelled) Expanded(child: CustomButton(text: 'Cancel Ride (Admin)', onPressed: () => _showAdminCancelRideDialog(ride.id), color: AppColors.errorColor)),
                                         ],
                                       ),
                                     ],
