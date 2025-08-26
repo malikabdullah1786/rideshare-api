@@ -19,6 +19,8 @@ class PostRideScreen extends StatefulWidget {
 
 class _PostRideScreenState extends State<PostRideScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _fromController = TextEditingController();
+  final _toController = TextEditingController();
   final _priceController = TextEditingController();
   final _seatsController = TextEditingController();
 
@@ -27,8 +29,6 @@ class _PostRideScreenState extends State<PostRideScreen> {
   final Set<Marker> _markers = {};
   LatLng? _origin;
   LatLng? _destination;
-  String _originAddress = 'Tap map to select origin';
-  String _destinationAddress = 'Tap map to select destination';
   final LatLng _initialCameraPosition = const LatLng(31.5204, 74.3587); // Default to Lahore
   int? _suggestedPrice;
 
@@ -37,7 +37,21 @@ class _PostRideScreenState extends State<PostRideScreen> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Add listeners to text fields to clear suggested price if user manually changes address
+    _fromController.addListener(() {
+      if (mounted) setState(() => _suggestedPrice = null);
+    });
+    _toController.addListener(() {
+      if (mounted) setState(() => _suggestedPrice = null);
+    });
+  }
+
+  @override
   void dispose() {
+    _fromController.dispose();
+    _toController.dispose();
     _priceController.dispose();
     _seatsController.dispose();
     _mapController?.dispose();
@@ -77,7 +91,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
     if (_origin == null || (_origin != null && _destination != null)) {
       _setOrigin(location);
       _destination = null;
-      _destinationAddress = 'Tap map to select destination';
+      _toController.clear();
       _markers.removeWhere((m) => m.markerId.value == 'destination');
     } else {
       _setDestination(location);
@@ -91,7 +105,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
       final address = await dbService.reverseGeocode(location.latitude, location.longitude);
       setState(() {
         _origin = location;
-        _originAddress = address;
+        _fromController.text = address;
         _markers.add(
           Marker(
             markerId: const MarkerId('origin'),
@@ -103,9 +117,9 @@ class _PostRideScreenState extends State<PostRideScreen> {
       });
       _calculateFare();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to get address: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to get address: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -116,7 +130,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
       final address = await dbService.reverseGeocode(location.latitude, location.longitude);
       setState(() {
         _destination = location;
-        _destinationAddress = address;
+        _toController.text = address;
         _markers.add(
           Marker(
             markerId: const MarkerId('destination'),
@@ -128,26 +142,29 @@ class _PostRideScreenState extends State<PostRideScreen> {
       });
       _calculateFare();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to get address: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to get address: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _calculateFare() async {
-    if (_origin == null || _destination == null) return;
+    final fromAddress = _fromController.text.trim();
+    final toAddress = _toController.text.trim();
+    if (fromAddress.isEmpty || toAddress.isEmpty) return;
+
     setState(() => _isLoading = true);
     try {
       final dbService = Provider.of<AppAuthProvider>(context, listen: false).databaseService;
-      final result = await dbService.calculateFare(_originAddress, _destinationAddress);
+      final result = await dbService.calculateFare(fromAddress, toAddress);
       setState(() {
         _suggestedPrice = result['suggestedPrice'];
         _priceController.text = _suggestedPrice.toString();
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to calculate fare: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to calculate fare: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -162,10 +179,6 @@ class _PostRideScreenState extends State<PostRideScreen> {
   }
 
   Future<void> _postRide() async {
-    if (_origin == null || _destination == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select origin and destination on the map.')));
-      return;
-    }
     if (_formKey.currentState!.validate()) {
       if (_selectedDate == null || _selectedTime == null) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select both date and time for the ride.')));
@@ -178,8 +191,8 @@ class _PostRideScreenState extends State<PostRideScreen> {
         final DateTime localDepartureDateTime = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _selectedTime!.hour, _selectedTime!.minute);
         final String departureTimeString = localDepartureDateTime.toIso8601String();
         final rideData = {
-          'from': _originAddress,
-          'to': _destinationAddress,
+          'from': _fromController.text.trim(),
+          'to': _toController.text.trim(),
           'price': int.parse(_priceController.text.trim()),
           'seats': int.parse(_seatsController.text.trim()),
           'departureTime': departureTimeString,
@@ -224,8 +237,11 @@ class _PostRideScreenState extends State<PostRideScreen> {
                     SizedBox(height: screenSize.height * 0.02),
                     CustomButton(text: 'Use My Current Location for Origin', onPressed: _getCurrentLocation, color: AppColors.secondaryColor),
                     SizedBox(height: screenSize.height * 0.02),
-                    ListTile(leading: const Icon(Icons.my_location, color: AppColors.primaryColor), title: const Text('From'), subtitle: Text(_originAddress)),
-                    ListTile(leading: const Icon(Icons.location_on, color: AppColors.secondaryColor), title: const Text('To'), subtitle: Text(_destinationAddress)),
+                    CustomTextField(controller: _fromController, labelText: 'From', validator: (value) => value!.isEmpty ? 'Origin address is required' : null),
+                    SizedBox(height: screenSize.height * 0.02),
+                    CustomTextField(controller: _toController, labelText: 'To', validator: (value) => value!.isEmpty ? 'Destination address is required' : null),
+                    SizedBox(height: screenSize.height * 0.02),
+                    CustomButton(text: 'Calculate Suggested Fare', onPressed: _calculateFare, color: AppColors.infoColor),
                     if (_suggestedPrice != null) Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: Text('Suggested Fare: PKR $_suggestedPrice', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryColor))),
                     SizedBox(height: screenSize.height * 0.02),
                     CustomTextField(controller: _priceController, labelText: 'Price per Seat (PKR)', keyboardType: TextInputType.number, validator: (value) { if (value == null || value.isEmpty) return 'Price is required.'; if (int.tryParse(value) == null || int.parse(value) <= 0) return 'Please enter a valid price.'; return null; }),

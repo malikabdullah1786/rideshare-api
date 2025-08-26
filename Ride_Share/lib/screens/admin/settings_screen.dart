@@ -17,9 +17,9 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _commissionController = TextEditingController();
-  final _bookingLeadTimeController = TextEditingController();
-  final _riderCancellationController = TextEditingController();
-  final _driverCancellationController = TextEditingController();
+  final _bookingTimeLimitHoursController = TextEditingController();
+  final _cancellationTimeLimitHoursPassengerController = TextEditingController();
+  final _cancellationTimeLimitHoursDriverController = TextEditingController();
   bool _isLoading = true;
 
   @override
@@ -31,18 +31,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
     final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-    // Fetch settings if they are not already loaded.
     if (settingsProvider.settings == null) {
       await settingsProvider.fetchSettings();
     }
 
     if (mounted) {
-       final settings = settingsProvider.settings;
+      final settings = settingsProvider.settings;
       if (settings != null) {
-        _commissionController.text = (settings.commissionRate * 100).toString();
-        _bookingLeadTimeController.text = settings.bookingTimeLimitHours.toString();
-        _riderCancellationController.text = settings.cancellationTimeLimitHoursPassenger.toString();
-        _driverCancellationController.text = settings.cancellationTimeLimitHoursDriver.toString();
+        _commissionController.text = (settings.commissionRate * 100).toStringAsFixed(2);
+        _bookingTimeLimitHoursController.text = settings.bookingTimeLimitHours.toString();
+        _cancellationTimeLimitHoursPassengerController.text = settings.cancellationTimeLimitHoursPassenger.toString();
+        _cancellationTimeLimitHoursDriverController.text = settings.cancellationTimeLimitHoursDriver.toString();
       }
       setState(() => _isLoading = false);
     }
@@ -54,12 +53,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
 
       try {
+        // Ensure settings are not null before trying to access the ID
+        if (settingsProvider.settings == null) {
+          throw Exception("Settings have not been loaded yet.");
+        }
+
         final newSettings = Settings(
           id: settingsProvider.settings!.id,
           commissionRate: double.parse(_commissionController.text.trim()) / 100,
-          bookingTimeLimitHours: int.parse(_bookingLeadTimeController.text.trim()),
-          cancellationTimeLimitHoursPassenger: int.parse(_riderCancellationController.text.trim()),
-          cancellationTimeLimitHoursDriver: int.parse(_driverCancellationController.text.trim()),
+          bookingTimeLimitHours: int.parse(_bookingTimeLimitHoursController.text.trim()),
+          cancellationTimeLimitHoursPassenger: int.parse(_cancellationTimeLimitHoursPassengerController.text.trim()),
+          cancellationTimeLimitHoursDriver: int.parse(_cancellationTimeLimitHoursDriverController.text.trim()),
         );
 
         await settingsProvider.updateSettings(newSettings);
@@ -86,9 +90,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _commissionController.dispose();
-    _bookingLeadTimeController.dispose();
-    _riderCancellationController.dispose();
-    _driverCancellationController.dispose();
+    _bookingTimeLimitHoursController.dispose();
+    _cancellationTimeLimitHoursPassengerController.dispose();
+    _cancellationTimeLimitHoursDriverController.dispose();
     super.dispose();
   }
 
@@ -119,31 +123,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      Text('Booking Lead Time (Minutes)', style: Theme.of(context).textTheme.titleMedium),
+                      Text('Booking Time Limit (Hours)', style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 8),
                       CustomTextField(
-                        controller: _bookingLeadTimeController,
-                        labelText: 'e.g., 10 minutes',
-                        keyboardType: TextInputType.number,
-                        validator: (v) => (int.tryParse(v!) == null || int.parse(v) < 0) ? 'Enter a valid number of minutes' : null,
-                      ),
-                      const SizedBox(height: 20),
-
-                      Text('Rider Cancellation Cutoff (Hours)', style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 8),
-                      CustomTextField(
-                        controller: _riderCancellationController,
-                        labelText: 'e.g., 2 hours',
+                        controller: _bookingTimeLimitHoursController,
+                        labelText: 'e.g., 1 hour before departure',
                         keyboardType: TextInputType.number,
                         validator: (v) => (int.tryParse(v!) == null || int.parse(v) < 0) ? 'Enter a valid number of hours' : null,
                       ),
                       const SizedBox(height: 20),
 
-                      Text('Driver Cancellation Cutoff (Hours)', style: Theme.of(context).textTheme.titleMedium),
+                      Text('Passenger Cancellation Limit (Hours)', style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 8),
                       CustomTextField(
-                        controller: _driverCancellationController,
-                        labelText: 'e.g., 4 hours',
+                        controller: _cancellationTimeLimitHoursPassengerController,
+                        labelText: 'e.g., 2 hours before departure',
+                        keyboardType: TextInputType.number,
+                        validator: (v) => (int.tryParse(v!) == null || int.parse(v) < 0) ? 'Enter a valid number of hours' : null,
+                      ),
+                      const SizedBox(height: 20),
+
+                      Text('Driver Cancellation Limit (Hours)', style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      CustomTextField(
+                        controller: _cancellationTimeLimitHoursDriverController,
+                        labelText: 'e.g., 4 hours before departure',
                         keyboardType: TextInputType.number,
                         validator: (v) => (int.tryParse(v!) == null || int.parse(v) < 0) ? 'Enter a valid number of hours' : null,
                       ),
