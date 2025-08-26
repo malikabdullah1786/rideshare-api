@@ -105,17 +105,24 @@ describe('Admin Controller', () => {
       await Setting.deleteMany();
     });
 
-    it('should update a setting with PUT', async () => {
+    it('should update multiple settings with PUT', async () => {
+      const newSettings = {
+        commissionRate: 0.2,
+        bookingLeadTimeMinutes: 15,
+      };
+
       const res = await request(app)
         .put('/api/admin/settings')
-        .send({ key: 'commissionRate', value: 0.2 });
+        .send(newSettings);
 
       expect(res.statusCode).toEqual(200);
-      expect(res.body.key).toBe('commissionRate');
-      expect(res.body.value).toBe(0.2);
+      expect(res.body.commissionRate).toBe(0.2);
+      expect(res.body.bookingLeadTimeMinutes).toBe(15);
 
-      const settingInDb = await Setting.findOne({ key: 'commissionRate' });
-      expect(settingInDb.value).toBe(0.2);
+      const commissionSettingInDb = await Setting.findOne({ key: 'commissionRate' });
+      expect(commissionSettingInDb.value).toBe(0.2);
+      const leadTimeSettingInDb = await Setting.findOne({ key: 'bookingLeadTimeMinutes' });
+      expect(leadTimeSettingInDb.value).toBe(15);
     });
 
     it('should get all settings with GET', async () => {

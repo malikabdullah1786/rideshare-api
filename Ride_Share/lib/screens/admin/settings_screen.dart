@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ride_share_app/constants/colors.dart';
-import 'package:ride_share_app/providers/auth_provider.dart';
+import 'package:ride_share_app/providers/settings_provider.dart';
+import 'package:ride_share_app/models/settings_model.dart';
 import 'package:ride_share_app/widgets/custom_button.dart';
 import 'package:ride_share_app/widgets/custom_textfield.dart';
 import 'package:ride_share_app/widgets/loading_indicator.dart';
@@ -29,47 +30,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
-    try {
-      final dbService = Provider.of<AppAuthProvider>(context, listen: false).databaseService;
-      final settings = await dbService.getSettings();
-      if (mounted) {
-        setState(() {
-          _commissionController.text = ((settings['commissionRate'] ?? 0.15) * 100).toString();
-          _bookingLeadTimeController.text = (settings['bookingLeadTimeMinutes'] ?? 10).toString();
-          _riderCancellationController.text = (settings['riderCancellationCutoffHours'] ?? 2).toString();
-          _driverCancellationController.text = (settings['driverCancellationCutoffHours'] ?? 4).toString();
-        });
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    // Fetch settings if they are not already loaded.
+    if (settingsProvider.settings == null) {
+      await settingsProvider.fetchSettings();
+    }
+
+    if (mounted) {
+       final settings = settingsProvider.settings;
+      if (settings != null) {
+        _commissionController.text = (settings.commissionRate * 100).toString();
+        _bookingLeadTimeController.text = settings.bookingTimeLimitHours.toString();
+        _riderCancellationController.text = settings.cancellationTimeLimitHoursPassenger.toString();
+        _driverCancellationController.text = settings.cancellationTimeLimitHoursDriver.toString();
       }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load settings: $e')));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _saveSettings() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+
       try {
-        final dbService = Provider.of<AppAuthProvider>(context, listen: false).databaseService;
+        final newSettings = Settings(
+          id: settingsProvider.settings!.id,
+          commissionRate: double.parse(_commissionController.text.trim()) / 100,
+          bookingTimeLimitHours: int.parse(_bookingLeadTimeController.text.trim()),
+          cancellationTimeLimitHoursPassenger: int.parse(_riderCancellationController.text.trim()),
+          cancellationTimeLimitHoursDriver: int.parse(_driverCancellationController.text.trim()),
+        );
 
-        final commissionPercentage = double.parse(_commissionController.text.trim());
-        await dbService.updateSetting('commissionRate', commissionPercentage / 100);
+        await settingsProvider.updateSettings(newSettings);
 
-        final bookingLeadTime = int.parse(_bookingLeadTimeController.text.trim());
-        await dbService.updateSetting('bookingLeadTimeMinutes', bookingLeadTime);
-
-        final riderCutoff = int.parse(_riderCancellationController.text.trim());
-        await dbService.updateSetting('riderCancellationCutoffHours', riderCutoff);
-
-        final driverCutoff = int.parse(_driverCancellationController.text.trim());
-        await dbService.updateSetting('driverCancellationCutoffHours', driverCutoff);
-
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved successfully!'), backgroundColor: AppColors.secondaryColor));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Settings saved successfully!'), backgroundColor: AppColors.secondaryColor)
+          );
+        }
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save settings: $e'), backgroundColor: AppColors.errorColor));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save settings: $e'), backgroundColor: AppColors.errorColor)
+          );
+        }
       } finally {
-        if (mounted) setState(() => _isLoading = false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }

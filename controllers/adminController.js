@@ -93,21 +93,29 @@ const getSettings = async (req, res) => {
 // @route   PUT /api/admin/settings
 // @access  Private/Admin
 const updateSettings = async (req, res) => {
-  const { key, value } = req.body;
-  if (key === undefined || value === undefined) {
-    return res.status(400).json({ message: 'Key and value are required.' });
-  }
+  const settingsToUpdate = req.body;
 
   try {
-    // Use findOneAndUpdate with upsert to create the setting if it doesn't exist
-    const setting = await Setting.findOneAndUpdate(
-      { key: key },
-      { value: value },
-      { new: true, upsert: true, runValidators: true }
-    );
-    res.json(setting);
+    const promises = Object.keys(settingsToUpdate).map(key => {
+      const value = settingsToUpdate[key];
+      return Setting.findOneAndUpdate(
+        { key: key },
+        { value: value },
+        { new: true, upsert: true, runValidators: true }
+      );
+    });
+
+    await Promise.all(promises);
+
+    const updatedSettings = await Setting.find({});
+    const settingsMap = updatedSettings.reduce((acc, setting) => {
+      acc[setting.key] = setting.value;
+      return acc;
+    }, {});
+
+    res.json(settingsMap);
   } catch (error) {
-    console.error('Error updating setting:', error);
+    console.error('Error updating settings:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 };
