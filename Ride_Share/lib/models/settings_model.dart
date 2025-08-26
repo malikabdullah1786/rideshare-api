@@ -25,7 +25,6 @@ class Settings {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'commissionRate': commissionRate,
       'bookingTimeLimitHours': bookingTimeLimitHours,
       'cancellationTimeLimitHoursPassenger': cancellationTimeLimitHoursPassenger,
