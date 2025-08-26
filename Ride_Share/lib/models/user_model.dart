@@ -96,6 +96,7 @@ class AppUser {
 
   // Method to create a copy with updated fields
   AppUser copyWith({
+    String? id,
     String? firebaseUid,
     String? email,
     String? name,
@@ -116,6 +117,7 @@ class AppUser {
     DateTime? createdAt,
   }) {
     return AppUser(
+      id: id ?? this.id,
       firebaseUid: firebaseUid ?? this.firebaseUid,
       email: email ?? this.email,
       name: name ?? this.name,

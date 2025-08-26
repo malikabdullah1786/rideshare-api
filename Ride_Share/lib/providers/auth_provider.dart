@@ -61,6 +61,7 @@ class AppAuthProvider with ChangeNotifier {
       } else {
         if (firebaseUser != null) {
           _appUser = AppUser(
+            id: firebaseUser.uid, // Use firebaseUid as a temporary ID
             firebaseUid: firebaseUser.uid,
             email: firebaseUser.email ?? '',
             name: firebaseUser.displayName ?? 'New User',

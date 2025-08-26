@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:ride_share_app/models/settings_model.dart';
-import 'package/ride_share_app/services/database_service.dart';
+import 'package:ride_share_app/services/database_service.dart';
 
 class SettingsProvider with ChangeNotifier {
   final DatabaseService _databaseService = DatabaseService();
