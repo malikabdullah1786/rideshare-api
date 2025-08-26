@@ -1,5 +1,6 @@
 const Ride = require('../models/Ride');
 const User = require('../models/User'); // To populate driver details
+const Setting = require('../models/Setting');
 const {
   geocodeAddress,
   getDistanceMatrix,
@@ -411,6 +412,10 @@ const getDriverEarnings = async (req, res) => {
   }
 
   try {
+    // Fetch the commission rate setting
+    const commissionRateSetting = await Setting.findOne({ key: 'commissionRate' });
+    const commissionRate = commissionRateSetting ? commissionRateSetting.value : 0.15; // Default to 15%
+
     const completedRides = await Ride.find({
       driver: req.user._id,
       status: 'completed',
@@ -426,7 +431,11 @@ const getDriverEarnings = async (req, res) => {
         }
         return sum;
       }, 0);
-      totalEarnings += ride.price * seatsBookedOnThisRide;
+
+      const grossRideEarning = ride.price * seatsBookedOnThisRide;
+      const netRideEarning = grossRideEarning * (1 - commissionRate); // Apply commission
+      totalEarnings += netRideEarning;
+
       if (seatsBookedOnThisRide > 0) {
         completedRideCount++;
       }

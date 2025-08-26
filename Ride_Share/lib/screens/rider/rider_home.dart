@@ -35,8 +35,9 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
     if (image != null) {
       try {
+        final bytes = await image.readAsBytes();
         final dbService = Provider.of<AppAuthProvider>(context, listen: false).databaseService;
-        final newImageUrl = await dbService.uploadProfilePicture(image);
+        final newImageUrl = await dbService.uploadProfilePicture(bytes, image.name);
         Provider.of<AppAuthProvider>(context, listen: false).updateUserProfilePicture(newImageUrl);
       } catch (e) {
         if (mounted) {

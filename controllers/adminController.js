@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Ride = require('../models/Ride');
+const Setting = require('../models/Setting');
 
 // @desc    Get all users
 // @route   GET /api/admin/users
@@ -71,9 +72,51 @@ const adminCancelRide = async (req, res) => {
   }
 };
 
+// @desc    Get all settings
+// @route   GET /api/admin/settings
+// @access  Private/Admin
+const getSettings = async (req, res) => {
+  try {
+    const settings = await Setting.find({});
+    // Convert array of settings to a key-value object for easier use on the frontend
+    const settingsMap = settings.reduce((acc, setting) => {
+      acc[setting.key] = setting.value;
+      return acc;
+    }, {});
+    res.json(settingsMap);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+// @desc    Update settings
+// @route   PUT /api/admin/settings
+// @access  Private/Admin
+const updateSettings = async (req, res) => {
+  const { key, value } = req.body;
+  if (key === undefined || value === undefined) {
+    return res.status(400).json({ message: 'Key and value are required.' });
+  }
+
+  try {
+    // Use findOneAndUpdate with upsert to create the setting if it doesn't exist
+    const setting = await Setting.findOneAndUpdate(
+      { key: key },
+      { value: value },
+      { new: true, upsert: true, runValidators: true }
+    );
+    res.json(setting);
+  } catch (error) {
+    console.error('Error updating setting:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 module.exports = {
   getUsers,
   approveUserProfile,
   updateUserPermissions,
   adminCancelRide,
+  getSettings,
+  updateSettings,
 };

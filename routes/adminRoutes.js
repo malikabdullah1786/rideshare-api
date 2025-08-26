@@ -5,6 +5,8 @@ const {
   approveUserProfile,
   updateUserPermissions,
   adminCancelRide,
+  getSettings,
+  updateSettings,
 } = require('../controllers/adminController');
 const { protect } = require('../middleware/authMiddleware');
 const { admin } = require('../middleware/adminMiddleware');
@@ -16,5 +18,8 @@ router.route('/users/:id/permissions').put(protect, admin, updateUserPermissions
 
 // Admin routes for managing rides
 router.route('/rides/:id/cancel').put(protect, admin, adminCancelRide);
+
+// Admin routes for managing settings
+router.route('/settings').get(protect, admin, getSettings).put(protect, admin, updateSettings);
 
 module.exports = router;

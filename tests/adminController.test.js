@@ -5,6 +5,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const adminRoutes = require('../routes/adminRoutes');
 const Ride = require('../models/Ride');
 const User = require('../models/User');
+const Setting = require('../models/Setting');
 
 const mockAdmin = {
   _id: new mongoose.Types.ObjectId(),
@@ -97,6 +98,37 @@ describe('Admin Controller', () => {
       const updatedRide = await Ride.findById(ride._id);
       expect(updatedRide.status).toBe('cancelled');
       expect(updatedRide.cancellationReason).toBe(`Cancelled by Admin: ${cancellationReason}`);
+    });
+  });
+  describe('/api/admin/settings', () => {
+    beforeEach(async () => {
+      await Setting.deleteMany();
+    });
+
+    it('should update a setting with PUT', async () => {
+      const res = await request(app)
+        .put('/api/admin/settings')
+        .send({ key: 'commissionRate', value: 0.2 });
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.key).toBe('commissionRate');
+      expect(res.body.value).toBe(0.2);
+
+      const settingInDb = await Setting.findOne({ key: 'commissionRate' });
+      expect(settingInDb.value).toBe(0.2);
+    });
+
+    it('should get all settings with GET', async () => {
+      await Setting.create({ key: 'commissionRate', value: 0.25 });
+      await Setting.create({ key: 'anotherSetting', value: 'test' });
+
+      const res = await request(app).get('/api/admin/settings');
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body).toEqual({
+        commissionRate: 0.25,
+        anotherSetting: 'test',
+      });
     });
   });
 });

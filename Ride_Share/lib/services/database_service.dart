@@ -1,10 +1,9 @@
 import 'dart:convert';
 
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 
 import 'package:ride_share_app/models/user_model.dart';
 
@@ -218,14 +217,14 @@ class DatabaseService {
   }
 
 
-  Future<String> uploadProfilePicture(XFile image) async {
+  Future<String> uploadProfilePicture(Uint8List imageBytes, String filename) async {
     try {
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('$_baseUrl/users/profile/upload'),
       );
       request.headers.addAll(_getHeaders());
-      request.files.add(await http.MultipartFile.fromPath('profilePicture', image.path));
+      request.files.add(http.MultipartFile.fromBytes('profilePicture', imageBytes, filename: filename));
 
       var response = await request.send();
 
@@ -725,6 +724,41 @@ class DatabaseService {
       }
     } catch (e) {
       print("Error cancelling ride as admin: $e");
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getSettings() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/admin/settings'),
+        headers: _getHeaders(),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to get settings.');
+      }
+    } catch (e) {
+      print("Error getting settings: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> updateSetting(String key, dynamic value) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$_baseUrl/admin/settings'),
+        headers: _getHeaders(),
+        body: json.encode({'key': key, 'value': value}),
+      );
+      if (response.statusCode != 200) {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to update setting.');
+      }
+    } catch (e) {
+      print("Error updating setting: $e");
       rethrow;
     }
   }

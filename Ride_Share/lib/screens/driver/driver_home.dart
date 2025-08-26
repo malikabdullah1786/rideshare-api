@@ -34,8 +34,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       try {
+        final bytes = await image.readAsBytes();
         final dbService = Provider.of<AppAuthProvider>(context, listen: false).databaseService;
-        final newImageUrl = await dbService.uploadProfilePicture(image);
+        final newImageUrl = await dbService.uploadProfilePicture(bytes, image.name);
         Provider.of<AppAuthProvider>(context, listen: false).updateUserProfilePicture(newImageUrl);
       } catch (e) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));

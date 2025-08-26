@@ -338,7 +338,17 @@ class _FindRidesScreenState extends State<FindRidesScreen> {
                                   children: [
                                     Text('${ride.from} to ${ride.to}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                     const SizedBox(height: 8),
-                                    Text('Driver: ${ride.driverName}'),
+                                    Row(
+                                      children: [
+                                        Text('Driver: ${ride.driverName}'),
+                                        const SizedBox(width: 8),
+                                        if (ride.driverRating != null && ride.driverRating! > 0) ...[
+                                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                                          const SizedBox(width: 4),
+                                          Text(ride.driverRating!.toStringAsFixed(1)),
+                                        ],
+                                      ],
+                                    ),
                                     Text('Driver Number: ${ride.driverPhone}'),
                                     Text('Driver id: ${ride.driverId}'),
                                     Text('Departure: ${DateFormat('MMM dd, hh:mm a').format(ride.departureTime)}'),
