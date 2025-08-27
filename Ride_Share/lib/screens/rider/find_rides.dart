@@ -141,8 +141,11 @@ class _FindRidesScreenState extends State<FindRidesScreen> {
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Booking for ride from ${ride.from} to ${ride.to}'),
+                    const SizedBox(height: 8),
+                    Text('Driver: ${ride.driverName} (ID: ${ride.driverId})'),
                     Text('Price per seat: PKR ${ride.price}'),
                     Text('Seats available: ${ride.seatsAvailable}'),
                     const SizedBox(height: 20),
