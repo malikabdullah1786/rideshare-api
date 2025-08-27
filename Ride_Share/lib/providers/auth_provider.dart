@@ -287,12 +287,15 @@ class AppAuthProvider with ChangeNotifier {
       final updatedFirebaseUser = FirebaseAuth.instance.currentUser;
 
       if (updatedFirebaseUser != null && updatedFirebaseUser.emailVerified) {
+        final bool wasAlreadyVerifiedInApp = _appUser?.emailVerified ?? false;
+
         _appUser = _appUser?.copyWith(emailVerified: true, profileCompleted: true);
-        if (_appUser != null) {
-          if (!(_appUser?.profileCompleted ?? false) || !(_appUser?.emailVerified ?? false)) {
-            await _databaseService.updateUserProfile(_appUser!.toMap());
-          }
+
+        if (_appUser != null && !wasAlreadyVerifiedInApp) {
+          await _databaseService.updateUserProfile(_appUser!.toMap());
+          notifyListeners(); // Notify listeners of the change in _appUser
         }
+
         _setError("Email verified successfully!");
       } else {
         _setError("Email not yet verified. Please check your inbox.");
