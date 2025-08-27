@@ -31,9 +31,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
     final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-    if (settingsProvider.settings == null) {
-      await settingsProvider.fetchSettings();
-    }
+
+    // Always fetch when the screen loads to ensure fresh data
+    await settingsProvider.fetchSettings();
 
     if (mounted) {
       final settings = settingsProvider.settings;
@@ -42,6 +42,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _bookingTimeLimitHoursController.text = settings.bookingTimeLimitHours.toString();
         _cancellationTimeLimitHoursPassengerController.text = settings.cancellationTimeLimitHoursPassenger.toString();
         _cancellationTimeLimitHoursDriverController.text = settings.cancellationTimeLimitHoursDriver.toString();
+      } else {
+        // If settings are still null, it means there was an error during fetch.
+        // The provider will have the error message.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(settingsProvider.error ?? 'Could not load settings.'), backgroundColor: AppColors.errorColor)
+        );
       }
       setState(() => _isLoading = false);
     }
@@ -53,13 +59,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
 
       try {
-        // Ensure settings are not null before trying to access the ID
-        if (settingsProvider.settings == null) {
-          throw Exception("Settings have not been loaded yet.");
-        }
-
+        // The ID is optional and not strictly needed for the update operation on the backend,
+        // which uses upsert. We can pass the existing ID if available, or null otherwise.
         final newSettings = Settings(
-          id: settingsProvider.settings!.id,
+          id: settingsProvider.settings?.id, // Safely access id, will be null if settings is null
           commissionRate: double.parse(_commissionController.text.trim()) / 100,
           bookingTimeLimitHours: int.parse(_bookingTimeLimitHoursController.text.trim()),
           cancellationTimeLimitHoursPassenger: int.parse(_cancellationTimeLimitHoursPassengerController.text.trim()),

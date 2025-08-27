@@ -120,6 +120,20 @@ const updateSettings = async (req, res) => {
   }
 };
 
+// @desc    Get all rides for admin
+// @route   GET /api/admin/rides
+// @access  Private/Admin
+const getAllRides = async (req, res) => {
+  try {
+    // Fetch all rides and populate the driver's name
+    const rides = await Ride.find({}).populate('driver', 'name').sort({ createdAt: -1 });
+    res.json(rides);
+  } catch (error) {
+    console.error('Error fetching all rides for admin:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 module.exports = {
   getUsers,
   approveUserProfile,
@@ -127,4 +141,5 @@ module.exports = {
   adminCancelRide,
   getSettings,
   updateSettings,
+  getAllRides,
 };

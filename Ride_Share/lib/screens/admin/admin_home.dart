@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:ride_share_app/screens/admin/user_list_screen.dart';
 import 'package:ride_share_app/screens/admin/settings_screen.dart';
+import 'package:ride_share_app/screens/admin/manage_rides_screen.dart'; // Import the new screen
 import 'package:ride_share_app/constants/colors.dart';
 
 class AdminHomeScreen extends StatelessWidget {
@@ -39,8 +41,10 @@ class AdminHomeScreen extends StatelessWidget {
                 title: const Text('Manage Rides'),
                 subtitle: const Text('(View all posted rides)'),
                 onTap: () {
-                  // The DriverHomeScreen is used as a combined view for admins
-                  // This is a temporary setup until a dedicated admin ride view is built
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ManageRidesScreen()),
+                  );
                 },
               ),
             ),

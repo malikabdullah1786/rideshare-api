@@ -1,12 +1,12 @@
 class Settings {
-  final String id;
+  final String? id;
   final double commissionRate;
   final int bookingTimeLimitHours;
   final int cancellationTimeLimitHoursPassenger;
   final int cancellationTimeLimitHoursDriver;
 
   Settings({
-    required this.id,
+    this.id,
     required this.commissionRate,
     required this.bookingTimeLimitHours,
     required this.cancellationTimeLimitHoursPassenger,

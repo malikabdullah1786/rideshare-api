@@ -59,8 +59,9 @@ const postRide = async (req, res) => {
       suggestedPrice: suggestedPrice.toFixed(2),
     });
   } catch (error) {
-    console.error('Error posting ride:', error);
-    res.status(500).json({ message: 'Server error posting ride' });
+    console.error('Error posting ride:', error.message);
+    // Send a more specific error message to the client if it's a known issue
+    res.status(400).json({ message: error.message || 'Server error posting ride' });
   }
 };
 
@@ -395,8 +396,8 @@ const calculateFare = async (req, res) => {
     suggestedPrice = Math.round(suggestedPrice / 10) * 10;
     res.status(200).json({ suggestedPrice, distance: distanceMatrix.distance.text, duration: distanceMatrix.duration.text });
   } catch (error) {
-    console.error('Error calculating fare:', error);
-    res.status(500).json({ message: 'Server error calculating fare.' });
+    console.error('Error calculating fare:', error.message);
+    res.status(400).json({ message: error.message || 'Server error calculating fare.' });
   }
 };
 

@@ -14,8 +14,8 @@ const reverseGeocode = async (req, res) => {
     const address = await reverseGeocodeLatLng(lat, lng);
     res.status(200).json({ address: address });
   } catch (error) {
-    console.error('Error in reverseGeocode controller:', error);
-    res.status(500).json({ message: 'Server error while reverse geocoding.' });
+    console.error('Error in reverseGeocode controller:', error.message);
+    res.status(400).json({ message: error.message || 'Server error while reverse geocoding.' });
   }
 };
 

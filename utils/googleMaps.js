@@ -11,10 +11,16 @@ const geocodeAddress = async (address) => {
         key: apiKey,
       },
     });
+
+    if (response.data.status !== 'OK' || !response.data.results || response.data.results.length === 0) {
+      throw new Error(`Geocoding failed for address "${address}". Status: ${response.data.status}`);
+    }
+
     return response.data.results[0].geometry.location;
   } catch (error) {
-    console.error("Error geocoding address:", error);
-    throw error;
+    console.error("Error geocoding address:", error.message);
+    // Re-throw a more generic error to not expose too much detail to the client
+    throw new Error('Failed to find location for the provided address.');
   }
 };
 
@@ -27,10 +33,18 @@ const getDistanceMatrix = async (origin, destination) => {
         key: apiKey,
       },
     });
-    return response.data.rows[0].elements[0];
+
+    const element = response.data.rows[0].elements[0];
+
+    if (element.status !== 'OK') {
+      // Handle cases like 'ZERO_RESULTS', 'NOT_FOUND', etc.
+      throw new Error(`Could not find a route. Status: ${element.status}`);
+    }
+
+    return element;
   } catch (error) {
-    console.error("Error getting distance matrix:", error);
-    throw error;
+    console.error("Error getting distance matrix:", error.message);
+    throw new Error('Failed to calculate distance and duration for the ride.');
   }
 };
 
@@ -42,15 +56,17 @@ const reverseGeocodeLatLng = async (lat, lng) => {
         key: apiKey,
       },
     });
-    // The first result is usually the most specific address.
-    if (response.data.results && response.data.results.length > 0) {
-      return response.data.results[0].formatted_address;
-    } else {
-      throw new Error('No address found for the given coordinates.');
+
+    if (response.data.status !== 'OK' || !response.data.results || response.data.results.length === 0) {
+      throw new Error(`Reverse geocoding failed for coordinates. Status: ${response.data.status}`);
     }
+
+    // The first result is usually the most specific address.
+    return response.data.results[0].formatted_address;
+
   } catch (error) {
-    console.error("Error reverse geocoding coordinates:", error);
-    throw error;
+    console.error("Error reverse geocoding coordinates:", error.message);
+    throw new Error('Failed to find address for the given coordinates.');
   }
 };
 
