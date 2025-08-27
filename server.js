@@ -1,5 +1,8 @@
-const express = require('express');
 const dotenv = require('dotenv');
+// IMPORTANT: Load environment variables from .env file before any other imports
+dotenv.config();
+
+const express = require('express');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const rideRoutes = require('./routes/rideRoutes');
@@ -9,9 +12,6 @@ const mapRoutes = require('./routes/mapRoutes');
 const cors = require('cors');
 const admin = require('firebase-admin'); // Import Firebase Admin SDK
 const bodyParser = require('body-parser'); // Import body-parser
-
-// Load environment variables from .env file (for local development)
-dotenv.config();
 
 // Initialize Firebase Admin SDK
 // IMPORTANT: For deployment, we load the service account key from an environment variable.
