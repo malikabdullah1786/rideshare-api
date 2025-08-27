@@ -120,6 +120,10 @@ class _ManageRidesScreenState extends State<ManageRidesScreen> {
                       children: [
                         Text('Driver: ${ride.driverName ?? 'N/A'}'),
                         Text('Departure: ${DateFormat('MMM dd, yyyy - hh:mm a').format(ride.departureTime)}'),
+                        Text('Price per Seat: PKR ${ride.price}'),
+                        if (ride.suggestedPrice != null)
+                          Text('Suggested Fare: PKR ${ride.suggestedPrice!.toStringAsFixed(2)}'),
+                        const SizedBox(height: 4),
                         Text('Status: ${ride.status}', style: TextStyle(fontWeight: FontWeight.bold, color: ride.status == 'cancelled' ? AppColors.errorColor : AppColors.primaryColor)),
                       ],
                     ),

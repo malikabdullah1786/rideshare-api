@@ -243,6 +243,10 @@ const updateUserProfile = async (req, res) => {
     user.emergencyContact = req.body.emergencyContact || user.emergencyContact; // Update this
     user.gender = req.body.gender || user.gender; // Update this
     user.age = req.body.age || user.age; // Update this
+    // Also handle emailVerified status, if sent
+    if (req.body.emailVerified !== undefined) {
+      user.emailVerified = req.body.emailVerified;
+    }
 
     const updatedUser = await user.save();
 

@@ -195,7 +195,7 @@ class Ride {
   final GeoLocation destination;
 
   final int price;
-
+  final double? suggestedPrice;
   final int seats;
 
   final int seatsAvailable;
@@ -233,7 +233,7 @@ class Ride {
     required this.destination,
 
     required this.price,
-
+    this.suggestedPrice,
     required this.seats,
 
     required this.seatsAvailable,
@@ -326,7 +326,7 @@ class Ride {
       origin: GeoLocation.fromMap(data['origin'] as Map<String, dynamic>?),
       destination: GeoLocation.fromMap(data['destination'] as Map<String, dynamic>?),
       price: data['price'],
-
+      suggestedPrice: (data['suggestedPrice'] as num?)?.toDouble(),
       seats: data['seats'],
 
       seatsAvailable: data['seatsAvailable'],

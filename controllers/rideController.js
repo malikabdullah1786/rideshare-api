@@ -47,6 +47,7 @@ const postRide = async (req, res) => {
       distance,
       duration,
       price,
+      suggestedPrice: suggestedPrice.toFixed(2), // Save the suggested price
       seats,
       seatsAvailable: seats,
       departureTime: parsedDepartureTime,
