@@ -4,6 +4,7 @@ import 'package:ride_share_app/constants/colors.dart';
 import 'package:ride_share_app/providers/auth_provider.dart'; // Import AppAuthProvider
 import 'package:ride_share_app/screens/forgot_password_screen.dart';
 import 'package:ride_share_app/screens/register_screen.dart';
+import 'package:ride_share_app/screens/verify_email_screen.dart'; // Import the verify email screen
 import 'package:ride_share_app/widgets/custom_button.dart';
 import 'package:ride_share_app/widgets/custom_textfield.dart';
 import 'package:ride_share_app/widgets/loading_indicator.dart';
@@ -34,21 +35,25 @@ class _AuthScreenState extends State<AuthScreen> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      // Navigation is handled by StreamBuilder in main.dart
-      // Display snackbar for success/failure
+
       if (context.mounted) {
-        if (appAuthProvider.error != null && !appAuthProvider.error!.contains("successful")) {
+        // After login attempt, check for user status
+        final user = appAuthProvider.appUser;
+        if (appAuthProvider.error == null && user != null) {
+          // Login was successful, now check email verification
+          if (!user.emailVerified) {
+            // Navigate to the verification screen if email is not verified
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const VerifyEmailScreen()),
+            );
+          }
+          // If email is verified, the StreamBuilder in main.dart will handle navigation to HomeScreen.
+        } else if (appAuthProvider.error != null) {
+          // If there was an error during login, show it.
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(appAuthProvider.error!),
               backgroundColor: AppColors.errorColor,
-            ),
-          );
-        } else if (appAuthProvider.error != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(appAuthProvider.error!),
-              backgroundColor: AppColors.secondaryColor,
             ),
           );
         }

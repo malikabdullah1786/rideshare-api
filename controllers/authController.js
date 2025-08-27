@@ -183,6 +183,7 @@ const loginUser = async (req, res) => {
         firebaseUid: user.firebaseUid,
         averageRating: user.averageRating,
         numRatings: user.numRatings,
+        emailVerified: user.emailVerified, // <-- ADD THIS LINE
       },
     });
     console.log('--- loginUser Controller Debug End ---\n');
@@ -298,6 +299,34 @@ const resetPassword = async (req, res) => {
 };
 
 
+// @desc    Check user's email verification status against Firebase
+// @route   POST /api/auth/check-verification
+// @access  Private
+const checkEmailVerification = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Get the very latest user record from Firebase
+    const firebaseUser = await admin.auth().getUser(user.firebaseUid);
+    const isVerified = firebaseUser.emailVerified;
+
+    // If Firebase says verified but our DB says not, update our DB.
+    if (isVerified && !user.emailVerified) {
+      user.emailVerified = true;
+      await user.save();
+      console.log(`Updated email verification status for ${user.email} to true.`);
+    }
+
+    res.status(200).json({ emailVerified: user.emailVerified });
+  } catch (error) {
+    console.error('Error checking email verification status:', error);
+    res.status(500).json({ message: 'Server error while checking verification status.' });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -305,4 +334,5 @@ module.exports = {
   updateUserProfile,
   forgotPassword,
   resetPassword,
+  checkEmailVerification,
 };

@@ -106,6 +106,8 @@ const userSchema = mongoose.Schema(
       default: 0,
       min: 0,
     },
+    verificationToken: String,
+    verificationTokenExpires: Date,
   },
   {
     timestamps: true,

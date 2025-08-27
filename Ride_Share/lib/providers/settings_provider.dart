@@ -3,7 +3,7 @@ import 'package:ride_share_app/models/settings_model.dart';
 import 'package:ride_share_app/services/database_service.dart';
 
 class SettingsProvider with ChangeNotifier {
-  final DatabaseService _databaseService = DatabaseService();
+  DatabaseService? _databaseService;
   Settings? _settings;
   bool _isLoading = false;
   String? _error;
@@ -12,16 +12,21 @@ class SettingsProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  SettingsProvider() {
-    fetchSettings();
+  void updateDatabaseService(DatabaseService databaseService) {
+    _databaseService = databaseService;
   }
 
   Future<void> fetchSettings() async {
+    if (_databaseService == null) {
+      _error = "Database service not available.";
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     _error = null;
     notifyListeners();
     try {
-      final settingsData = await _databaseService.getSettings();
+      final settingsData = await _databaseService!.getSettings();
       if (settingsData != null) {
         _settings = Settings.fromMap(settingsData);
       } else {
@@ -36,11 +41,16 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<void> updateSettings(Settings settings) async {
-     _isLoading = true;
+    if (_databaseService == null) {
+      _error = "Database service not available.";
+      notifyListeners();
+      return;
+    }
+    _isLoading = true;
     _error = null;
     notifyListeners();
     try {
-      final settingsData = await _databaseService.updateSettings(settings.toMap());
+      final settingsData = await _databaseService!.updateSettings(settings.toMap());
       _settings = Settings.fromMap(settingsData);
     } catch (e) {
       _error = "An error occurred while updating settings: $e";

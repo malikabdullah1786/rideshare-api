@@ -48,7 +48,17 @@ class MyApp extends StatelessWidget {
 
       providers: [
         ChangeNotifierProvider(create: (_) => AppAuthProvider()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProxyProvider<AppAuthProvider, SettingsProvider>(
+          create: (_) => SettingsProvider(),
+          update: (context, authProvider, previousSettingsProvider) {
+            previousSettingsProvider!.updateDatabaseService(authProvider.databaseService);
+            // If the user has just logged in (previous user was null, current is not), fetch settings.
+            if (authProvider.appUser != null && previousSettingsProvider.settings == null) {
+              previousSettingsProvider.fetchSettings();
+            }
+            return previousSettingsProvider;
+          },
+        ),
       ],
 
       child: MaterialApp(
