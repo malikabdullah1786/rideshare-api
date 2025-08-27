@@ -90,6 +90,7 @@ const registerUser = async (req, res) => {
         age,
         userType,
         firebaseUid: firebaseUid,
+        emailVerified: false, // Explicitly set to false on creation
         // Optional fields, only include if they exist and are relevant
         ...(carModel && { carModel }),
         ...(carRegistration && { carRegistration }),
@@ -183,7 +184,7 @@ const loginUser = async (req, res) => {
         firebaseUid: user.firebaseUid,
         averageRating: user.averageRating,
         numRatings: user.numRatings,
-        emailVerified: user.emailVerified, // <-- ADD THIS LINE
+        emailVerified: user.emailVerified,
       },
     });
     console.log('--- loginUser Controller Debug End ---\n');

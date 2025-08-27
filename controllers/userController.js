@@ -4,12 +4,12 @@ const User = require('../models/User');
 // @route   POST /api/users/profile/upload
 // @access  Private
 const uploadProfilePicture = async (req, res) => {
-  // Add a check to ensure the file was uploaded by the middleware
-  if (!req.file) {
-    return res.status(400).json({ message: 'Image upload failed. Please try again.' });
-  }
-
   try {
+    // The error handling is now more robust in the route, but we still check for the file.
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file was uploaded. Please select an image.' });
+    }
+
     const user = await User.findById(req.user._id);
 
     if (user) {

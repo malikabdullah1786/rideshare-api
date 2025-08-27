@@ -9,6 +9,7 @@ const rideRoutes = require('./routes/rideRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const userRoutes = require('./routes/userRoutes');
 const mapRoutes = require('./routes/mapRoutes');
+const settingRoutes = require('./routes/settingRoutes');
 const cors = require('cors');
 const admin = require('firebase-admin'); // Import Firebase Admin SDK
 const bodyParser = require('body-parser'); // Import body-parser
@@ -76,6 +77,7 @@ app.use('/api/rides', rideRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/maps', mapRoutes);
+app.use('/api/settings', settingRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
