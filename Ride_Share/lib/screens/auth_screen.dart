@@ -78,9 +78,16 @@ class _AuthScreenState extends State<AuthScreen> {
         title: const Text('Ride Share App'),
         backgroundColor: AppColors.primaryColor,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05),
-        child: Column(
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage("assets/images/logo.png"),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05),
+          child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(height: screenSize.height * 0.05),

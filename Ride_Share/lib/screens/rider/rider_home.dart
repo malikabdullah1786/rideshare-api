@@ -24,11 +24,16 @@ class RiderHomeScreen extends StatefulWidget {
 class _RiderHomeScreenState extends State<RiderHomeScreen> {
   bool _isLoadingBookedRides = false;
   List<Ride> _bookedRides = [];
+  bool _didLoadRides = false;
 
   @override
-  void initState() {
-    super.initState();
-    _loadBookedRides();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final appAuthProvider = Provider.of<AppAuthProvider>(context, listen: false);
+    if (!_didLoadRides && appAuthProvider.appUser != null) {
+      _loadBookedRides();
+      _didLoadRides = true;
+    }
   }
 
   Future<void> _pickAndUploadImage() async {

@@ -297,7 +297,7 @@ const getMyBookedRides = async (req, res) => {
     return res.status(403).json({ message: 'Only riders can view their booked rides.' });
   }
   try {
-    const rides = await Ride.find({ 'passengers.user': req.user._id }).populate('driver', 'averageRating numRatings carModel').populate('passengers.user', 'name email phone').sort({ departureTime: 1 });
+    const rides = await Ride.find({ passengers: { $elemMatch: { user: req.user._id } } }).populate('driver', 'averageRating numRatings carModel').populate('passengers.user', 'name email phone').sort({ departureTime: 1 });
     res.status(200).json(rides);
   } catch (error) {
     console.error('Error fetching booked rides:', error);
