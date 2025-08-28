@@ -1,3 +1,4 @@
+// --- Ride Share API Server Entry Point ---
 const dotenv = require('dotenv');
 // IMPORTANT: Load environment variables from .env file before any other imports
 dotenv.config();
