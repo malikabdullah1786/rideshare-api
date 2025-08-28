@@ -15,7 +15,13 @@ const storage = new CloudinaryStorage({
   params: {
     folder: 'ride_share_profile_pictures',
     format: async (req, file) => 'png', // supports promises as well
-    public_id: (req, file) => 'user-' + req.user._id,
+    public_id: (req, file) => {
+      // Create a unique public ID using the Firebase UID and a timestamp
+      // This is more robust than using the MongoDB _id, which might not be a simple string
+      const firebaseUid = req.user.firebaseUid;
+      const timestamp = Date.now();
+      return `user-${firebaseUid}-${timestamp}`;
+    },
   },
 });
 

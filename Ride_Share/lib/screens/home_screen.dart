@@ -35,7 +35,8 @@ class HomeScreen extends StatelessWidget {
 
     // Check email verification status first
     // This step is crucial for security and often required.
-    if (!currentUser.emailVerified) {
+    // FIXED: Allow admin-approved users to bypass email verification, as they are trusted.
+    if (!currentUser.emailVerified && !currentUser.isApproved) {
       return const VerifyEmailScreen();
     }
 

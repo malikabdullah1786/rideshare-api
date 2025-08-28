@@ -62,19 +62,31 @@ class DatabaseService {
   }
 
 
-  Map<String, String> _getHeaders({bool isJson = true}) {
-    final Map<String, String> headers = {};
+  Map<String, String> _getHeaders() {
+    final Map<String, String> headers = {
 
-    if (isJson) {
-      headers['Content-Type'] = 'application/json';
-    }
+      'Content-Type': 'application/json',
+
+    };
 
     if (_authToken != null) {
       headers['Authorization'] = 'Bearer $_authToken';
-      print('DatabaseService: Full Auth Token in Headers: $_authToken');
+
+// --- DEBUG PRINT START ---
+
+      print(
+          'DatabaseService: Full Auth Token in Headers: $_authToken'); // Log the full token
+
+// --- DEBUG PRINT END ---
+
     }
 
+// --- DEBUG PRINT START ---
+
     print('DatabaseService: Headers being sent: $headers');
+
+// --- DEBUG PRINT END ---
+
     return headers;
   }
 
@@ -229,9 +241,7 @@ class DatabaseService {
         'POST',
         Uri.parse('$_baseUrl/users/profile/upload'),
       );
-      // FIXED: Specifically call with isJson: false to avoid sending a 'Content-Type' header,
-      // allowing the multipart request to set its own with a boundary.
-      request.headers.addAll(_getHeaders(isJson: false));
+      request.headers.addAll(_getHeaders());
       request.files.add(http.MultipartFile.fromBytes('profilePicture', imageBytes, filename: filename));
 
       var response = await request.send();
@@ -758,8 +768,9 @@ class DatabaseService {
 
   Future<Map<String, dynamic>> getSettings() async {
     try {
+      // FIXED: Changed endpoint from admin-only to the new public settings route.
       final response = await http.get(
-        Uri.parse('$_baseUrl/admin/settings'),
+        Uri.parse('$_baseUrl/settings'),
         headers: _getHeaders(),
       );
       if (response.statusCode == 200) {

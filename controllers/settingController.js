@@ -35,7 +35,15 @@ const getPublicSettings = async (req, res) => {
     // Any setting present in the database will overwrite the default.
     const finalSettings = { ...defaultSettings, ...dbSettingsMap };
 
-    res.json(finalSettings);
+    // FIXED: Do not expose sensitive settings like commissionRate to all users.
+    // The frontend only needs the time limits for booking and cancellation.
+    const publicSettings = {
+      bookingTimeLimitHours: finalSettings.bookingTimeLimitHours,
+      cancellationTimeLimitHoursPassenger: finalSettings.cancellationTimeLimitHoursPassenger,
+      cancellationTimeLimitHoursDriver: finalSettings.cancellationTimeLimitHoursDriver,
+    };
+
+    res.json(publicSettings);
   } catch (error) {
     console.error('Error fetching public settings:', error);
     res.status(500).json({ message: 'Server Error' });

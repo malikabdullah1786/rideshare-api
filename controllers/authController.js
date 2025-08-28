@@ -209,7 +209,6 @@ const getUserProfile = async (req, res) => {
     return res.status(401).json({ message: 'Not authorized, no user data.' });
   }
 
-  // FIXED: Ensure the entire user object is sent, consistent with login response
   res.status(200).json({
     _id: req.user._id,
     name: req.user.name,
@@ -220,18 +219,6 @@ const getUserProfile = async (req, res) => {
     firebaseUid: req.user.firebaseUid,
     averageRating: req.user.averageRating,
     numRatings: req.user.numRatings,
-    emailVerified: req.user.emailVerified,
-    isApproved: req.user.isApproved,
-    profileCompleted: req.user.profileCompleted,
-    profilePictureUrl: req.user.profilePictureUrl,
-    cnic: req.user.cnic,
-    emergencyContact: req.user.emergencyContact,
-    gender: req.user.gender,
-    age: req.user.age,
-    carModel: req.user.carModel,
-    carRegistration: req.user.carRegistration,
-    seatsAvailable: req.user.seatsAvailable,
-    createdAt: req.user.createdAt,
   });
   console.log('--- getUserProfile Controller Debug End ---\n');
 };
