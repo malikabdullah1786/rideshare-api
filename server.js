@@ -1,4 +1,3 @@
-// --- Ride Share API Server Entry Point ---
 const dotenv = require('dotenv');
 // IMPORTANT: Load environment variables from .env file before any other imports
 dotenv.config();
@@ -18,23 +17,19 @@ const bodyParser = require('body-parser'); // Import body-parser
 // Initialize Firebase Admin SDK
 // IMPORTANT: For deployment, we load the service account key from an environment variable.
 // For local development, it can fall back to a local JSON file if the env var is not set.
-if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY_JSON) {
+if (process.env.ON_RENDER) {
   try {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY_JSON);
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
-    console.log('Firebase Admin SDK initialized from environment variable.');
+    console.log('Firebase Admin SDK initialized from Render environment variable.');
   } catch (error) {
     console.error('Failed to parse Firebase Service Account Key JSON from environment variable:', error);
-    // In a production app, you might want to exit the process here if Firebase is critical
-    // process.exit(1);
   }
 } else {
-  console.error('FIREBASE_SERVICE_ACCOUNT_KEY_JSON environment variable is not set. Attempting to load from local file.');
+  // Fallback to local file for development
   try {
-    // Fallback for local development if the file exists.
-    // Ensure 'rideshare-bdd66-firebase-adminsdk-fbsvc-6656f7de8f.json' is the CORRECT filename.
     const serviceAccount = require('./rideshare-bdd66-firebase-adminsdk-fbsvc-6656f7de8f.json');
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
@@ -42,12 +37,10 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY_JSON) {
     console.log('Firebase Admin SDK initialized from local file.');
   } catch (error) {
     console.error('Failed to initialize Firebase Admin SDK from local file:', error);
-    // In a production app, you might want to exit the process here if Firebase is critical
-    // process.exit(1);
   }
 }
 
-// Connect to MongoDB
+// Connect to MongoDB database
 connectDB();
 
 const app = express();
