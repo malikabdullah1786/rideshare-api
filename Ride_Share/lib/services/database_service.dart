@@ -62,31 +62,19 @@ class DatabaseService {
   }
 
 
-  Map<String, String> _getHeaders() {
-    final Map<String, String> headers = {
+  Map<String, String> _getHeaders({bool isJson = true}) {
+    final Map<String, String> headers = {};
 
-      'Content-Type': 'application/json',
-
-    };
+    if (isJson) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (_authToken != null) {
       headers['Authorization'] = 'Bearer $_authToken';
-
-// --- DEBUG PRINT START ---
-
-      print(
-          'DatabaseService: Full Auth Token in Headers: $_authToken'); // Log the full token
-
-// --- DEBUG PRINT END ---
-
+      print('DatabaseService: Full Auth Token in Headers: $_authToken');
     }
 
-// --- DEBUG PRINT START ---
-
     print('DatabaseService: Headers being sent: $headers');
-
-// --- DEBUG PRINT END ---
-
     return headers;
   }
 
@@ -241,7 +229,9 @@ class DatabaseService {
         'POST',
         Uri.parse('$_baseUrl/users/profile/upload'),
       );
-      request.headers.addAll(_getHeaders());
+      // FIXED: Specifically call with isJson: false to avoid sending a 'Content-Type' header,
+      // allowing the multipart request to set its own with a boundary.
+      request.headers.addAll(_getHeaders(isJson: false));
       request.files.add(http.MultipartFile.fromBytes('profilePicture', imageBytes, filename: filename));
 
       var response = await request.send();
