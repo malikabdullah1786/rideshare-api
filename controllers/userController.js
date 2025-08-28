@@ -1,9 +1,16 @@
 const User = require('../models/User');
+const { cloudinary } = require('../config/cloudinary');
 
 // @desc    Upload profile picture
 // @route   POST /api/users/profile/upload
 // @access  Private
 const uploadProfilePicture = async (req, res) => {
+  // Add a check to ensure Cloudinary is configured on the server
+  if (!cloudinary.config().cloud_name) {
+    console.error('Cloudinary is not configured. Please check environment variables for CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.');
+    return res.status(500).json({ message: 'Error: The file upload service is not configured correctly on the server.' });
+  }
+
   try {
     // The error handling is now more robust in the route, but we still check for the file.
     if (!req.file) {

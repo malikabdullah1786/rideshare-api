@@ -185,6 +185,8 @@ const loginUser = async (req, res) => {
         averageRating: user.averageRating,
         numRatings: user.numRatings,
         emailVerified: user.emailVerified,
+        isApproved: user.isApproved,
+        profileCompleted: user.profileCompleted,
       },
     });
     console.log('--- loginUser Controller Debug End ---\n');
