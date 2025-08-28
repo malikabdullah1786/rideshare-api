@@ -18,6 +18,11 @@ const storage = new CloudinaryStorage({
     public_id: (req, file) => {
       // Create a unique public ID using the Firebase UID and a timestamp
       // This is more robust than using the MongoDB _id, which might not be a simple string
+      if (!req.user || !req.user.firebaseUid) {
+        // Fallback public_id if user is not available.
+        // This prevents a crash and allows for easier debugging.
+        return `unauthenticated-upload-${Date.now()}`;
+      }
       const firebaseUid = req.user.firebaseUid;
       const timestamp = Date.now();
       return `user-${firebaseUid}-${timestamp}`;
