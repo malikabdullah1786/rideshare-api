@@ -5,10 +5,19 @@ const Setting = require('../models/Setting');
 // @access  Public
 const getPublicSettings = async (req, res) => {
   try {
-    // Define default settings to ensure the app works even with an empty database
+    // Define default settings to ensure the app works even with an empty database.
+    // This object includes keys used by the rideController and the seed script to cover all bases.
     const defaultSettings = {
-      isBookingAvailable: true, // Crucial setting that was missing
+      // General settings
+      isBookingAvailable: true,
       commissionRate: 0.15,
+
+      // Settings as used by rideController.js
+      bookingLeadTimeMinutes: 10,
+      riderCancellationCutoffHours: 2,
+      driverCancellationCutoffHours: 4,
+
+      // Settings as defined in the (potentially outdated) seed script
       bookingTimeLimitHours: 1,
       cancellationTimeLimitHoursPassenger: 2,
       cancellationTimeLimitHoursDriver: 4,
